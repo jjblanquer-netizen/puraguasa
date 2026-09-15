@@ -1,0 +1,13 @@
+{
+  "rules": {
+    "rooms": {
+      ".read": true,
+      ".write": true,
+      "$roomCode": {
+        ".validate": "$roomCode.matches(/^[A-Z2-9]{5}$/)"
+      }
+    },
+    ".read": false,
+    ".write": false
+  }
+}

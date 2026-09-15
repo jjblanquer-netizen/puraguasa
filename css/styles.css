@@ -1,0 +1,266 @@
+/* ============================================================
+   INTRUSO — Sistema visual
+   Fondo azul noche, degradados violeta/azul/turquesa/magenta,
+   tarjetas de cristal, tipografía redondeada, modo oscuro.
+   ============================================================ */
+
+:root {
+  --bg: #0B0F2B;
+  --bg-alt: #131A3D;
+  --surface: rgba(255,255,255,0.06);
+  --surface-border: rgba(255,255,255,0.14);
+  --text: #F5F6FF;
+  --text-secondary: #A8AECB;
+  --text-muted: #6B7299;
+  --primary: #8B5CF6;
+  --primary-alt: #3B82F6;
+  --accent: #14B8A6;
+  --accent-alt: #EC4899;
+  --danger: #EF4444;
+  --warning: #F59E0B;
+  --success: #22C55E;
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-pill: 999px;
+  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Inter, system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+
+body {
+  background: radial-gradient(circle at 20% -10%, #3B0764 0%, transparent 45%),
+              radial-gradient(circle at 100% 0%, #0891B2 0%, transparent 40%),
+              linear-gradient(180deg, var(--bg) 0%, var(--bg-alt) 100%);
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.app-shell {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: max(20px, env(safe-area-inset-top)) 20px max(20px, env(safe-area-inset-bottom));
+  max-width: 480px;
+  width: 100%;
+  margin: 0 auto;
+  gap: 16px;
+}
+
+.screen.center {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+h1, h2, h3 { margin: 0; font-weight: 800; }
+h1 { font-size: 28px; letter-spacing: 1px; }
+h2 { font-size: 22px; }
+h3 { font-size: 16px; }
+p { margin: 0; color: var(--text-secondary); line-height: 1.5; }
+
+.hero-title {
+  font-size: 42px;
+  font-weight: 900;
+  letter-spacing: 3px;
+  text-align: center;
+  background: linear-gradient(135deg, #fff, #C4B5FD);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.hero-emoji { font-size: 56px; text-align: center; }
+
+/* ---- Tarjetas de cristal ---- */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+}
+
+.card.glow-success { border-color: var(--success); box-shadow: 0 0 24px rgba(34,197,94,0.25); }
+.card.glow-danger { border-color: var(--danger); box-shadow: 0 0 24px rgba(239,68,68,0.25); }
+.card.center { align-items: center; text-align: center; display: flex; flex-direction: column; gap: 10px; }
+
+/* ---- Botones ---- */
+.btn {
+  min-height: 56px;
+  border-radius: 18px;
+  border: none;
+  font-size: 16px;
+  font-weight: 700;
+  font-family: inherit;
+  padding: 14px 24px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  transition: opacity 0.15s, transform 0.1s;
+  color: #fff;
+  background: var(--primary);
+}
+.btn:active { transform: scale(0.98); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn.secondary { background: var(--surface); color: var(--text); border: 1px solid var(--surface-border); }
+.btn.ghost { background: transparent; color: var(--text-secondary); min-height: 44px; }
+.btn.danger { background: var(--danger); }
+.btn.auto { width: auto; }
+.btn-row { display: flex; gap: 10px; }
+.btn-row .btn { flex: 1; }
+
+/* ---- Inputs ---- */
+input[type="text"], input[type="number"], select {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  color: var(--text);
+  font-size: 15px;
+  font-family: inherit;
+}
+input::placeholder { color: var(--text-muted); }
+input:focus, select:focus { outline: 2px solid var(--primary); }
+
+/* ---- Chips ---- */
+.chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  padding: 9px 14px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--surface-border);
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+}
+.chip.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+.chip.disabled { opacity: 0.4; pointer-events: none; }
+
+/* ---- Avatares ---- */
+.avatar {
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid transparent;
+  position: relative;
+  flex-shrink: 0;
+}
+.avatar-emoji { line-height: 1; }
+
+/* ---- Filas de jugador ---- */
+.player-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 4px;
+}
+.player-name { flex: 1; font-weight: 600; font-size: 15px; }
+.player-list { display: flex; flex-direction: column; gap: 6px; }
+
+/* ---- Toggle switch ---- */
+.switch-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; gap: 10px; }
+.switch { position: relative; width: 46px; height: 26px; flex-shrink: 0; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.switch-track {
+  position: absolute; inset: 0; background: rgba(255,255,255,0.15); border-radius: 999px; cursor: pointer; transition: background 0.15s;
+}
+.switch input:checked + .switch-track { background: var(--primary); }
+.switch-thumb {
+  position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; background: #fff; border-radius: 50%; transition: transform 0.15s;
+}
+.switch input:checked ~ .switch-thumb { transform: translateX(20px); }
+
+/* ---- Código de sala ---- */
+.room-code {
+  font-size: 40px;
+  font-weight: 900;
+  letter-spacing: 8px;
+  text-align: center;
+  color: #fff;
+}
+.room-link {
+  font-size: 13px;
+  color: var(--accent);
+  text-align: center;
+  word-break: break-all;
+}
+
+/* ---- Temporizador ---- */
+.timer-display {
+  font-size: 56px;
+  font-weight: 900;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.timer-warning { color: var(--danger); }
+
+/* ---- Secreto (hold to reveal) ---- */
+.secret-box {
+  min-height: 140px;
+  border: 1px dashed var(--surface-border);
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px;
+  text-align: center;
+  background: rgba(0,0,0,0.15);
+}
+.secret-word { font-size: 30px; font-weight: 900; }
+.intruso-banner { font-size: 22px; font-weight: 900; color: #FEE2E2; }
+
+/* ---- Confeti simple ---- */
+.confetti-row { display: flex; gap: 8px; justify-content: center; font-size: 26px; }
+
+/* ---- Toast ---- */
+.toast {
+  position: fixed;
+  bottom: max(20px, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(20,20,35,0.95);
+  border: 1px solid var(--surface-border);
+  color: var(--text);
+  padding: 12px 20px;
+  border-radius: var(--radius-pill);
+  font-size: 14px;
+  z-index: 999;
+  max-width: 90%;
+  text-align: center;
+}
+
+/* ---- Utilidades ---- */
+.muted { color: var(--text-muted); font-size: 13px; }
+.error-text { color: var(--danger); font-size: 13px; }
+.spacer { flex: 1; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.scroll-y { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.text-center { text-align: center; }
+.mb-0 { margin-bottom: 0; }
