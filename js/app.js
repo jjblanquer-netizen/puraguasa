@@ -54,6 +54,7 @@ const state = {
     revealConfirmedLocally: false,
     voteCandidateId: null,
     voteConfirming: false,
+    resetConfirming: false,
   },
   lastVoteRound: 0,
   locks: { clueAdvance: false, debateAdvance: false },
@@ -217,6 +218,7 @@ function syncScreenFromPhase(phase) {
     state.ui.revealPeeking = false;
     state.ui.revealConfirmedLocally = false;
     state.ui.lastChanceMode = 'choice';
+    state.ui.resetConfirming = false;
     if (next !== 'config') state.ui.configDraft = null;
   }
   state.lastPhase = next;
@@ -235,21 +237,50 @@ function leaveToLanding() {
 }
 
 // ---------------------------- Dispatcher de pantallas ----------------------------
+const RESET_ELIGIBLE_SCREENS = ['reveal', 'clues', 'debate', 'voting', 'voteResult', 'lastChance'];
+
 function renderScreen() {
+  let html;
   switch (state.screen) {
-    case 'landing': return screenLanding();
-    case 'join': return screenJoin();
-    case 'lobby': return screenLobby();
-    case 'config': return screenConfig();
-    case 'reveal': return screenReveal();
-    case 'clues': return screenClues();
-    case 'debate': return screenDebate();
-    case 'voting': return screenVoting();
-    case 'voteResult': return screenVoteResult();
-    case 'lastChance': return screenLastChance();
-    case 'finalResult': return screenFinalResult();
-    default: return `<div class="screen center"><p>Cargando…</p></div>`;
+    case 'landing': html = screenLanding(); break;
+    case 'join': html = screenJoin(); break;
+    case 'lobby': html = screenLobby(); break;
+    case 'config': html = screenConfig(); break;
+    case 'reveal': html = screenReveal(); break;
+    case 'clues': html = screenClues(); break;
+    case 'debate': html = screenDebate(); break;
+    case 'voting': html = screenVoting(); break;
+    case 'voteResult': html = screenVoteResult(); break;
+    case 'lastChance': html = screenLastChance(); break;
+    case 'finalResult': html = screenFinalResult(); break;
+    default: html = `<div class="screen center"><p>Cargando…</p></div>`;
   }
+  if (isHost() && RESET_ELIGIBLE_SCREENS.includes(state.screen)) {
+    html += hostResetControl();
+  }
+  return html;
+}
+
+// ---------------------------- Control de reinicio (solo anfitrión) ----------------------------
+// Disponible durante la partida por si hay que corregir algo grave: añadir o
+// quitar un jugador, arreglar una configuración equivocada, etc. Exige doble
+// confirmación porque destruye la ronda en curso.
+function hostResetControl() {
+  if (state.ui.resetConfirming) {
+    return `
+      <div class="screen" style="padding-top:0">
+        <div class="card" style="border-color:var(--danger)">
+          <p style="color:#fff;font-weight:700;margin-bottom:6px">⚠️ ¿Reiniciar la partida?</p>
+          <p class="muted" style="margin-bottom:12px">Se perderán los puntos de esta ronda y todos volveréis al lobby, donde podrás añadir o quitar jugadores antes de empezar de nuevo.</p>
+          <div class="btn-row">
+            <button class="btn secondary auto" onclick="App.cancelReset()">Cancelar</button>
+            <button class="btn danger auto" onclick="App.doReset()">Sí, reiniciar</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  return `<div class="screen" style="padding-top:0;padding-bottom:4px"><div class="reset-link" onclick="App.confirmReset()">🔄 Reiniciar partida (volver al lobby)</div></div>`;
 }
 
 // ---------------------------- Landing ----------------------------
@@ -260,7 +291,8 @@ function screenLanding() {
   return `
     <div class="screen center">
       <div class="hero-emoji">🕵️‍♂️</div>
-      <div class="hero-title">INTRUSO</div>
+      <div class="hero-title">PURAGUASA</div>
+      <p class="tagline">🔎 En busca del Intruso</p>
       <p>Descubre quién no sabe la palabra secreta. Cada jugador con su propio móvil.</p>
     </div>
     <div class="card" style="display:flex;flex-direction:column;gap:12px">
@@ -515,41 +547,42 @@ function screenReveal() {
     return `
       <div class="screen center">
         <div class="card center">
-          <div class="hero-emoji">✅</div>
-          <p>Ya has visto tu rol.</p>
-          <p class="muted">Esperando a los demás… (${confirmedCount}/${players.length})</p>
+          <div class="hero-emoji">🤫</div>
+          <p>Ya sabes tu secreto. ¡Ni una palabra todavía!</p>
+          <p class="muted">Esperando a que el resto también lo descubra… (${confirmedCount}/${players.length})</p>
         </div>
         ${isHost() ? `
-          <button class="btn" onclick="App.goClues()" ${allConfirmed ? '' : 'disabled'}>Continuar a las pistas</button>
+          <button class="btn" onclick="App.goClues()" ${allConfirmed ? '' : 'disabled'}>Empezar la ronda de pistas</button>
           ${!allConfirmed ? `<button class="btn ghost" onclick="App.goClues()">Continuar de todos modos</button>` : ''}
-        ` : `<div class="card center"><p>Cuando todos hayáis visto vuestro rol, el anfitrión continuará.</p></div>`}
+        ` : `<div class="card center"><p>Cuando todos hayáis fisgoneado vuestra pantalla, el anfitrión dará paso a las pistas.</p></div>`}
       </div>
     `;
   }
 
   const revealedContent = myRole === 'intruso'
     ? `
-      <div class="intruso-banner">🎭 ERES EL INTRUSO</div>
+      <div class="intruso-banner">🎭 ¡ERES EL INTRUSO!</div>
       ${state.room.config?.intrusoGetsHint ? `<p>Pista: ${esc(game.term.hintForIntruso)}</p>` : ''}
-      <p class="muted">No conoces la palabra. ¡Intenta camuflarte!</p>
+      <p class="muted">No tienes ni idea de la palabra secreta. ¡A camuflarte con estilo! 🕶️</p>
     `
     : `
-      <p class="muted mb-0">La palabra secreta es</p>
+      <p class="muted mb-0">Psss… tu palabra secreta es</p>
       <div class="secret-word">${esc(game.term.word)}</div>
     `;
 
   return `
     <div class="screen center">
-      <h2>${esc(me.name)}, este es tu turno</h2>
+      <h2>🤫 ¡Es tu momento, ${esc(me.name)}!</h2>
+      <p>Ahora mismo cada jugador está descubriendo, a solas en su móvil, si conoce la palabra secreta… o si le ha tocado ser el Intruso. Que nadie mire tu pantalla 👀</p>
       <div class="secret-box" id="secretBox">
-        ${state.ui.revealPeeking ? revealedContent : '<p class="muted">🔒 Contenido oculto</p>'}
+        ${state.ui.revealPeeking ? revealedContent : '<p class="muted">🙈 Aquí se esconde tu secreto…</p>'}
       </div>
       <button class="btn"
         onmousedown="App.setPeek(true)" onmouseup="App.setPeek(false)" onmouseleave="App.setPeek(false)"
         ontouchstart="App.setPeek(true)" ontouchend="App.setPeek(false)">
-        👆 Mantén pulsado para revelar
+        👆 Mantén pulsado para descubrirlo
       </button>
-      <button class="btn secondary" onclick="App.confirmReveal()">Ya he visto mi rol, continuar</button>
+      <button class="btn secondary" onclick="App.confirmReveal()">✅ Ya lo sé, ¡vamos!</button>
     </div>
   `;
 }
@@ -1133,6 +1166,16 @@ window.App = {
     await startGame();
   },
   goToConfigFromFinal: async () => { await DB.updateAt(`rooms/${state.code}/game`, { phase: 'config' }); },
+
+  // Reinicio de emergencia (anfitrión) — vuelve al lobby para poder tocar la lista de jugadores.
+  confirmReset: () => { state.ui.resetConfirming = true; render(); },
+  cancelReset: () => { state.ui.resetConfirming = false; render(); },
+  doReset: async () => {
+    state.ui.resetConfirming = false;
+    await DB.writeAt(`rooms/${state.code}/game`, { phase: 'lobby' });
+    await DB.writeAt(`rooms/${state.code}/totalScores`, {});
+    await DB.writeAt(`rooms/${state.code}/usedTermIds`, {});
+  },
 };
 
 async function doCreate() {
