@@ -786,7 +786,7 @@ function screenClues() {
     controls = `
       <div class="btn-row">
         ${host && turnSeconds > 0 ? `<button class="btn secondary auto" onclick="App.toggleCluesPause()">${cluesPaused ? 'Reanudar' : 'Pausar'}</button>` : ''}
-        <button class="btn" onclick="App.advanceClueTurnManual()">${isLast ? 'Ya la he dado, ir al debate' : 'Ya la he dado, siguiente'}</button>
+        <button class="btn" onclick="App.advanceClueTurnManual()">${isLast ? 'Ir al debate' : 'Siguiente'}</button>
       </div>
     `;
   } else if (host) {
@@ -813,11 +813,20 @@ function screenClues() {
         ${remaining !== null ? `<div class="timer-display ${remaining <= 10 ? 'timer-warning' : ''}">${remaining}s</div>` : '<p class="muted">⏱ Sin límite de tiempo</p>'}
       </div>
 
-      <div class="chip-row" style="justify-content:center">
+      <p class="muted text-center" style="font-size:11.5px">Orden de turno</p>
+      <div class="chip-row" style="justify-content:center;align-items:flex-end">
         ${order.map((id, i) => {
           const p = players.find((pp) => pp.id === id);
           if (!p) return '';
-          return `<span style="opacity:${i === turnIndex ? 1 : 0.4}">${avatarHtml(p.avatarId, p.colorId, 36)}</span>`;
+          const isCurrent = i === turnIndex;
+          const isNext = i === turnIndex + 1;
+          const opacity = isCurrent ? 1 : isNext ? 0.9 : 0.35;
+          return `
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;opacity:${opacity};max-width:56px">
+              ${avatarHtml(p.avatarId, p.colorId, 36)}
+              ${isNext ? `<span class="muted" style="font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:56px">${esc(p.name)}</span>` : ''}
+            </div>
+          `;
         }).join('')}
       </div>
 
