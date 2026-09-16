@@ -77,14 +77,23 @@ h3 { font-size: 16px; }
 p { margin: 0; color: var(--text-secondary); line-height: 1.5; }
 
 .hero-title {
-  font-size: 42px;
+  font-size: clamp(30px, 9vw, 42px);
   font-weight: 900;
-  letter-spacing: 3px;
+  letter-spacing: 2px;
   text-align: center;
   background: linear-gradient(135deg, #fff, #C4B5FD);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  white-space: nowrap;
+}
+
+.tagline {
+  text-align: center;
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.5px;
 }
 
 .hero-emoji { font-size: 56px; text-align: center; }
@@ -127,6 +136,15 @@ p { margin: 0; color: var(--text-secondary); line-height: 1.5; }
 .btn.ghost { background: transparent; color: var(--text-secondary); min-height: 44px; }
 .btn.danger { background: var(--danger); }
 .btn.auto { width: auto; }
+
+.reset-link {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 12px;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 4px 0 2px;
+}
 .btn-row { display: flex; gap: 10px; }
 .btn-row .btn { flex: 1; }
 
