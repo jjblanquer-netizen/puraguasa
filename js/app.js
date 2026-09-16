@@ -54,8 +54,6 @@ const state = {
     revealConfirmedLocally: false,
     voteCandidateId: null,
     voteConfirming: false,
-    debatePaused: false,
-    cluesPaused: false,
   },
   lastVoteRound: 0,
   locks: { clueAdvance: false, debateAdvance: false },
@@ -385,7 +383,12 @@ const DEFAULT_CONFIG = {
 
 function ensureConfigDraft() {
   if (!state.ui.configDraft) {
-    state.ui.configDraft = { ...(state.room?.config || DEFAULT_CONFIG) };
+    // Firebase elimina los arrays/objetos vacíos al guardarlos (p. ej.
+    // "categoryIds: []" desaparece del todo), así que al releerlo hay que
+    // rellenar cualquier campo así con su valor por defecto, o el resto del
+    // código rompe al llamar a .includes()/.map() sobre "undefined".
+    const base = state.room?.config || DEFAULT_CONFIG;
+    state.ui.configDraft = { ...DEFAULT_CONFIG, ...base, categoryIds: base.categoryIds || [] };
   }
   return state.ui.configDraft;
 }
@@ -560,10 +563,13 @@ function screenClues() {
   const currentId = order[turnIndex];
   const current = players.find((p) => p.id === currentId);
   const turnSeconds = state.room.config?.turnSeconds || 0;
-  const remaining = turnSeconds > 0 && game.turnEndAt ? Math.max(0, Math.ceil((game.turnEndAt - serverNow()) / 1000)) : null;
+  const cluesPaused = !!game.turnPausedRemaining;
+  const remaining = turnSeconds > 0
+    ? (cluesPaused ? Math.ceil(game.turnPausedRemaining / 1000) : Math.max(0, Math.ceil(((game.turnEndAt || 0) - serverNow()) / 1000)))
+    : null;
   const isLast = turnIndex >= order.length - 1;
 
-  if (isHost() && turnSeconds > 0 && remaining === 0 && !game.cluesPaused && !state.locks.clueAdvance) {
+  if (isHost() && turnSeconds > 0 && remaining === 0 && !cluesPaused && !state.locks.clueAdvance) {
     state.locks.clueAdvance = true;
     queueMicrotask(async () => { await advanceClueTurn(); state.locks.clueAdvance = false; });
   }
@@ -590,7 +596,7 @@ function screenClues() {
 
       ${isHost() ? `
         <div class="btn-row">
-          ${turnSeconds > 0 ? `<button class="btn secondary auto" onclick="App.toggleCluesPause()">${game.cluesPaused ? 'Reanudar' : 'Pausar'}</button>` : ''}
+          ${turnSeconds > 0 ? `<button class="btn secondary auto" onclick="App.toggleCluesPause()">${cluesPaused ? 'Reanudar' : 'Pausar'}</button>` : ''}
           <button class="btn" onclick="App.advanceClueTurnManual()">${isLast ? 'Ir al debate' : 'Siguiente jugador'}</button>
         </div>
       ` : `<p class="muted text-center">El anfitrión controla el ritmo de esta fase.</p>`}
@@ -877,7 +883,7 @@ async function advanceClueTurn() {
   await DB.updateAt(`rooms/${state.code}/game`, {
     turnIndex: nextIndex,
     turnEndAt: turnSeconds > 0 ? serverTimeEnd(turnSeconds) : null,
-    cluesPaused: false,
+    turnPausedRemaining: null,
   });
 }
 
@@ -1023,7 +1029,8 @@ window.App = {
   cfgSet: (key, value) => { ensureConfigDraft()[key] = value; render(); },
   cfgToggleCategory: (id) => {
     const cfg = ensureConfigDraft();
-    cfg.categoryIds = cfg.categoryIds.includes(id) ? cfg.categoryIds.filter((c) => c !== id) : [...cfg.categoryIds, id];
+    const ids = cfg.categoryIds || [];
+    cfg.categoryIds = ids.includes(id) ? ids.filter((c) => c !== id) : [...ids, id];
     render();
   },
   startGame: () => startGame(),
@@ -1050,7 +1057,7 @@ window.App = {
       phase: 'clues',
       turnIndex: 0,
       turnEndAt: turnSeconds > 0 ? serverTimeEnd(turnSeconds) : null,
-      cluesPaused: false,
+      turnPausedRemaining: null,
     });
   },
 
@@ -1058,7 +1065,16 @@ window.App = {
   advanceClueTurnManual: () => advanceClueTurn(),
   toggleCluesPause: async () => {
     const game = state.room.game || {};
-    await DB.updateAt(`rooms/${state.code}/game`, { cluesPaused: !game.cluesPaused });
+    if (game.turnPausedRemaining) {
+      // Reanudar: recalcula el instante final a partir del tiempo restante guardado.
+      await DB.updateAt(`rooms/${state.code}/game`, {
+        turnEndAt: serverNow() + game.turnPausedRemaining,
+        turnPausedRemaining: null,
+      });
+    } else {
+      const remainingMs = Math.max(0, (game.turnEndAt || serverNow()) - serverNow());
+      await DB.updateAt(`rooms/${state.code}/game`, { turnPausedRemaining: remainingMs });
+    }
   },
 
   // Debate
