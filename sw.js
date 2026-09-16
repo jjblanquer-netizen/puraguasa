@@ -11,7 +11,7 @@
 // Sube este número cada vez que cambies archivos estáticos, para
 // forzar a los navegadores a limpiar la caché antigua.
 // ============================================================
-const CACHE = 'puraguasa-v2';
+const CACHE = 'puraguasa-v3';
 const SHELL_FILES = [
   './',
   './index.html',
