@@ -699,7 +699,7 @@ function screenConfig() {
     return `
       <div class="screen center">
         <div class="card center">
-          <div class="hero-emoji">⚙️</div>
+          <img src="icons/host-configuring.gif" alt="" style="width:140px;height:140px;border-radius:24px" />
           <p>El anfitrión está configurando la partida…</p>
         </div>
       </div>
