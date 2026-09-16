@@ -15,6 +15,7 @@ import { CATEGORIES, AVATARS, AVATAR_COLORS, getAvatar, getColorHex, TERMS } fro
 const ME_KEY = 'intruso.me';
 const LAST_ROOM_KEY = 'intruso.lastRoom';
 const ONBOARDING_KEY = 'intruso.onboardingSeen';
+const APP_VERSION = '1.1.0';
 
 const ONBOARDING_SLIDES = [
   {
@@ -81,6 +82,7 @@ const state = {
     resetConfirming: false,
     editingProfile: false,
     leaveConfirming: false,
+    showHelp: false,
     onboardingIndex: 0,
     onboardingDontShow: false,
   },
@@ -122,6 +124,7 @@ const ICONS = {
   crown: '<path d="M3 8l4.5 3.2L12 4l4.5 7.2L21 8l-2 10H5L3 8z" stroke-linejoin="round"/>',
   refresh: '<path d="M21 8a9 9 0 0 0-15.5-4.5M3 3v5h5"/><path d="M3 16a9 9 0 0 0 15.5 4.5M21 21v-5h-5"/>',
   close: '<path d="M18 6 6 18M6 6l12 12"/>',
+  info: '<circle cx="12" cy="12" r="9"/><path d="M12 16v-5"/><circle cx="12" cy="8.3" r="0.6" fill="currentColor" stroke="none"/>',
   check: '<path d="M20 6 9 17l-5-5"/>',
   clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>',
 };
@@ -331,6 +334,7 @@ const IN_ROOM_SCREENS = ['lobby', 'config', 'reveal', 'clues', 'debate', 'voting
 function renderScreen() {
   if (state.ui.editingProfile) return screenEditProfile();
   if (state.ui.leaveConfirming) return screenLeaveConfirm();
+  if (state.ui.showHelp) return screenHelp();
 
   let html;
   switch (state.screen) {
@@ -420,6 +424,39 @@ function screenLeaveConfirm() {
   `;
 }
 
+// ---------------------------- Ayuda / instrucciones ----------------------------
+function screenHelp() {
+  return `
+    <div class="screen">
+      <h2>Cómo se juega</h2>
+      <div class="card" style="display:flex;flex-direction:column;gap:14px">
+        <div>
+          <h3>1. Descubre el secreto</h3>
+          <p>Todos los jugadores reciben la misma palabra secreta en su propio móvil… excepto el Intruso, que no tiene ni idea de qué va la cosa.</p>
+        </div>
+        <div>
+          <h3>2. Da pistas sin pasarte</h3>
+          <p>Por turnos, cada uno dice una palabra relacionada con el secreto. Si eres muy obvio, le regalas la respuesta al Intruso.</p>
+        </div>
+        <div>
+          <h3>3. Debate y vota en secreto</h3>
+          <p>Tras comentar las pistas, cada jugador vota desde su propio móvil a quién cree que es el Intruso.</p>
+        </div>
+        <div>
+          <h3>4. Que gane el mejor</h3>
+          <p>Si descubrís al Intruso, tiene una última oportunidad de adivinar la palabra. Si pasa desapercibido, gana él solito.</p>
+        </div>
+      </div>
+      <div class="card center">
+        <p class="muted mb-0">PuraGuasa — En busca del Intruso</p>
+        <p class="muted mb-0">Versión ${APP_VERSION}</p>
+        <p class="muted mb-0">By @jjblanquer</p>
+      </div>
+      <button class="btn secondary" onclick="App.closeHelp()">Cerrar</button>
+    </div>
+  `;
+}
+
 // ---------------------------- Control de reinicio (solo anfitrión) ----------------------------
 // Disponible durante la partida por si hay que corregir algo grave: añadir o
 // quitar un jugador, arreglar una configuración equivocada, etc. Exige doble
@@ -482,11 +519,12 @@ function screenLanding() {
     ? `<button class="btn secondary" onclick="App.rejoinLast()">Continuar en ${esc(state.ui.rejoinCode)}</button>`
     : '';
   return `
-    <div class="screen center">
+    <div class="screen center" style="position:relative">
+      <button class="icon-btn" style="position:absolute;top:0;right:0" onclick="App.openHelp()" aria-label="Ayuda">${icon('info', 20)}</button>
       <img src="icons/hero.png" alt="PuraGuasa" class="hero-image" />
       <div class="hero-title">PURAGUASA</div>
       <p class="tagline">🔎 En busca del Intruso</p>
-      <p>Descubre quién no sabe la palabra secreta. Cada jugador con su propio móvil.</p>
+      <p>Puedes ser el intruso entre todos tus amigos. En PuraGuasa todo vale.</p>
     </div>
     <div class="card" style="display:flex;flex-direction:column;gap:12px">
       <button class="btn" onclick="App.goCreate()">Crear partida</button>
@@ -629,6 +667,8 @@ function screenLobby() {
 
 // ---------------------------- Configuración (solo anfitrión) ----------------------------
 const DEFAULT_CONFIG = {
+  wordSource: 'auto', // 'auto' (catálogo, como siempre) | 'host' (la escribe el anfitrión)
+  hostWord: '',
   numIntrusos: 1,
   intrusosKnowEachOther: true,
   intrusoGetsHint: false,
@@ -696,41 +736,47 @@ function screenConfig() {
       <h2>Configuración</h2>
 
       <div class="card">
-        <h3>🎭 Modo de juego</h3>
+        <h3>Palabra secreta</h3>
         <div class="chip-row" style="margin-top:8px">
-          <span class="chip active">Palabra secreta ✅</span>
-          <span class="chip disabled">Personajes (próx.)</span>
-          <span class="chip disabled">Lugar secreto (próx.)</span>
+          <span class="chip ${cfg.wordSource === 'auto' ? 'active' : ''}" onclick="App.cfgSet('wordSource','auto')">Automática</span>
+          <span class="chip ${cfg.wordSource === 'host' ? 'active' : ''}" onclick="App.cfgSet('wordSource','host')">La pongo yo</span>
         </div>
+        ${cfg.wordSource === 'host' ? `
+          <input type="text" placeholder="Escribe la palabra secreta de esta ronda" maxlength="40"
+            style="margin-top:10px" value="${esc(cfg.hostWord)}" oninput="App.cfgSetHostWord(this.value)" />
+          <p class="muted" style="margin-top:6px">Solo tú la escribes ahora; nadie la verá hasta que le toque revelarla en su móvil.</p>
+        ` : `<p class="muted" style="margin-top:8px">La palabra sale de nuestro catálogo, según las categorías y la dificultad que elijas abajo.</p>`}
       </div>
 
       <div class="card">
-        <h3>👤 Intrusos</h3>
+        <h3>Intrusos</h3>
         <div class="chip-row" style="margin:8px 0">${intrusosChips}</div>
         <p class="muted">Máximo recomendado para ${players.length} jugadores: ${maxIntrusos}</p>
         ${switchRow('Los intrusos se conocen entre sí', 'intrusosKnowEachOther', cfg.intrusosKnowEachOther)}
-        ${switchRow('Dar una pista general al intruso', 'intrusoGetsHint', cfg.intrusoGetsHint)}
+        ${cfg.wordSource === 'auto' ? switchRow('Dar una pista general al intruso', 'intrusoGetsHint', cfg.intrusoGetsHint) : ''}
         ${switchRow('El intruso puede adivinar la palabra', 'intrusoCanGuess', cfg.intrusoCanGuess)}
       </div>
 
-      <div class="card">
-        <h3>📚 Categorías</h3>
-        <div class="chip-row" style="margin-top:8px">${catChips}</div>
-        <p class="muted">Sin selección = todas las categorías.</p>
-      </div>
+      ${cfg.wordSource === 'auto' ? `
+        <div class="card">
+          <h3>Categorías</h3>
+          <div class="chip-row" style="margin-top:8px">${catChips}</div>
+          <p class="muted">Sin selección = todas las categorías.</p>
+        </div>
+
+        <div class="card">
+          <h3>Dificultad</h3>
+          <div class="chip-row" style="margin-top:8px">${diffChips}</div>
+        </div>
+
+        <div class="card">
+          <h3>Contenido</h3>
+          <div class="chip-row" style="margin-top:8px">${ratingChips}</div>
+        </div>
+      ` : ''}
 
       <div class="card">
-        <h3>🎯 Dificultad</h3>
-        <div class="chip-row" style="margin-top:8px">${diffChips}</div>
-      </div>
-
-      <div class="card">
-        <h3>🔞 Contenido</h3>
-        <div class="chip-row" style="margin-top:8px">${ratingChips}</div>
-      </div>
-
-      <div class="card">
-        <h3>⏱️ Tiempos</h3>
+        <h3>Tiempos</h3>
         <p class="muted">Turno de pista</p>
         <div class="chip-row">${turnChips}</div>
         <p class="muted" style="margin-top:10px">Debate</p>
@@ -768,6 +814,7 @@ function switchRow(label, key, value) {
 function screenReveal() {
   const game = state.room.game || {};
   const myRole = game.roles ? game.roles[me.id] : null;
+  const isIntruso = myRole === 'intruso';
   const players = playersArray(state.room);
   const confirmedCount = Object.keys(game.revealConfirmed || {}).length;
   const allConfirmed = confirmedCount >= players.length;
@@ -788,15 +835,16 @@ function screenReveal() {
     `;
   }
 
-  const revealedContent = myRole === 'intruso'
+  const myWord = game.words ? game.words[me.id] : null;
+  const revealedContent = isIntruso
     ? `
       <div class="intruso-banner">🎭 ¡ERES EL INTRUSO!</div>
-      ${state.room.config?.intrusoGetsHint ? `<p>Pista: ${esc(game.term.hintForIntruso)}</p>` : ''}
+      ${state.room.config?.intrusoGetsHint && game.intrusoHint ? `<p>Pista: ${esc(game.intrusoHint)}</p>` : ''}
       <p class="muted">No tienes ni idea de la palabra secreta. ¡A camuflarte con estilo! 🕶️</p>
     `
     : `
       <p class="muted mb-0">Psss… tu palabra secreta es</p>
-      <div class="secret-word">${esc(game.term.word)}</div>
+      <div class="secret-word">${esc(myWord ? myWord.word : '')}</div>
     `;
 
   return `
@@ -1019,6 +1067,7 @@ function screenLastChance() {
   const eliminated = players.find((p) => p.id === game.eliminatedId);
   const iAmGuessing = me.id === game.eliminatedId;
   const alreadyAnswered = game.lastChanceGuess !== undefined && game.lastChanceGuess !== null;
+  const targetWord = game.words ? game.words[game.lastChanceTargetId] : null;
 
   if (!iAmGuessing) {
     return `
@@ -1032,20 +1081,26 @@ function screenLastChance() {
     `;
   }
 
+  if (!targetWord) {
+    // Salvaguarda: si por algún motivo no hay palabra objetivo, no bloqueamos la partida.
+    finalizeRound(undefined, undefined);
+    return `<div class="screen center"><p class="muted">Un momento…</p></div>`;
+  }
+
   if (alreadyAnswered) {
     return `
       <div class="screen center">
         <div class="card center">
           <p>${game.lastChanceCorrect ? '✅ ¡Correcto!' : '❌ No era esa palabra.'}</p>
-          <p class="muted">La palabra era: ${esc(game.term.word)}</p>
+          <p class="muted">La palabra era: ${esc(targetWord.word)}</p>
         </div>
       </div>
     `;
   }
 
   if (!state.ui.lastChanceOptions.length) {
-    const decoys = TERMS.filter((t) => t.category === game.term.category && t.id !== game.term.id).map((t) => t.word);
-    state.ui.lastChanceOptions = Engine.shuffle([game.term.word, ...Engine.shuffle(decoys).slice(0, 3)]);
+    const decoys = TERMS.filter((t) => t.category === targetWord.category && t.id !== targetWord.id).map((t) => t.word);
+    state.ui.lastChanceOptions = Engine.shuffle([targetWord.word, ...Engine.shuffle(decoys).slice(0, 3)]);
   }
 
   return `
@@ -1081,6 +1136,7 @@ function screenFinalResult() {
   const roundPoints = game.roundPoints || {};
   const mvpId = Object.entries(roundPoints).sort((a, b) => b[1] - a[1])[0]?.[0];
   const mvp = players.find((p) => p.id === mvpId);
+  const theWord = game.words ? Object.values(game.words)[0] : null;
 
   return `
     <div class="screen scroll-y">
@@ -1090,7 +1146,7 @@ function screenFinalResult() {
 
       <div class="card center">
         <p class="muted mb-0">La palabra secreta era</p>
-        <div class="secret-word">${esc(game.term.word)}</div>
+        <div class="secret-word">${esc(theWord ? theWord.word : '—')}</div>
       </div>
 
       ${mvp ? `
@@ -1134,27 +1190,47 @@ async function startGame() {
   if (playerIds.length < 3) { showToast('Se necesitan al menos 3 jugadores.'); return; }
 
   const config = { ...cfg, numIntrusos: Engine.clampNumIntrusos(playerIds.length, cfg.numIntrusos) };
-  const term = Engine.selectTerm(TERMS, config, state.room.usedTermIds || {});
-  if (!term) {
-    showToast('No hay palabras disponibles con esta configuración. Prueba con otras categorías o dificultad.');
-    return;
-  }
   const roles = Engine.assignRoles(playerIds, config.numIntrusos);
+  const jugadorIds = playerIds.filter((id) => roles[id] === 'jugador');
   const order = config.randomizeOrder ? Engine.shuffle(playerIds) : playerIds;
   const prevRound = state.room.game?.roundNumber || 0;
+
+  const words = {};
+  const usedIdUpdates = {};
+  let intrusoHint = '';
+
+  if (config.wordSource === 'host') {
+    const word = (config.hostWord || '').trim();
+    if (!word) {
+      showToast('Escribe la palabra secreta antes de empezar.');
+      return;
+    }
+    const term = { id: `host_${Date.now()}`, word, category: 'personalizado', hintForIntruso: '', difficulty: 'media' };
+    jugadorIds.forEach((id) => { words[id] = term; });
+  } else {
+    const term = Engine.selectTerm(TERMS, config, state.room.usedTermIds || {});
+    if (!term) {
+      showToast('No hay palabras disponibles con esta configuración. Prueba con otras categorías o dificultad.');
+      return;
+    }
+    jugadorIds.forEach((id) => { words[id] = term; });
+    usedIdUpdates[`usedTermIds/${term.id}`] = true;
+    intrusoHint = term.hintForIntruso;
+  }
 
   await DB.updateAt(`rooms/${state.code}`, {
     config,
     game: {
       phase: 'reveal',
       roundNumber: prevRound + 1,
-      term,
       roles,
       order,
+      words,
+      intrusoHint,
       revealConfirmed: {},
       turnIndex: 0,
     },
-    [`usedTermIds/${term.id}`]: true,
+    ...usedIdUpdates,
   });
 }
 
@@ -1225,8 +1301,14 @@ async function resolveVoting() {
 async function continueAfterVoteResult() {
   const game = state.room.game || {};
   const eliminatedIsIntruso = game.eliminatedId && game.roles[game.eliminatedId] === 'intruso';
-  if (eliminatedIsIntruso && state.room.config?.intrusoCanGuess) {
-    await DB.updateAt(`rooms/${state.code}/game`, { phase: 'lastChance' });
+  const canGuess = eliminatedIsIntruso && state.room.config?.intrusoCanGuess && Object.keys(game.words || {}).length > 0;
+
+  if (canGuess) {
+    // Todos los jugadores comparten la misma palabra, así que cualquiera de
+    // ellos sirve como referencia para la última oportunidad.
+    const jugadorIdsConPalabra = Object.keys(game.words || {});
+    const targetId = jugadorIdsConPalabra[Math.floor(Math.random() * jugadorIdsConPalabra.length)];
+    await DB.updateAt(`rooms/${state.code}/game`, { phase: 'lastChance', lastChanceTargetId: targetId || null });
   } else {
     await finalizeRound(undefined, undefined);
   }
@@ -1338,6 +1420,7 @@ window.App = {
   goConfig: async () => { await DB.updateAt(`rooms/${state.code}/game`, { phase: 'config' }); },
   backToLobby: async () => { state.ui.configDraft = null; await DB.updateAt(`rooms/${state.code}/game`, { phase: 'lobby' }); },
   cfgSet: (key, value) => { ensureConfigDraft()[key] = value; render(); },
+  cfgSetHostWord: (v) => { ensureConfigDraft().hostWord = v; },
   cfgToggleCategory: (id) => {
     const cfg = ensureConfigDraft();
     const ids = cfg.categoryIds || [];
@@ -1422,7 +1505,8 @@ window.App = {
   setLastChanceMode: (m) => { state.ui.lastChanceMode = m; render(); },
   submitLastChance: async (guess) => {
     const game = state.room.game || {};
-    const correct = guess ? Engine.isCloseEnough(guess, game.term.word) : false;
+    const targetWord = game.words ? game.words[game.lastChanceTargetId] : null;
+    const correct = guess && targetWord ? Engine.isCloseEnough(guess, targetWord.word) : false;
     await finalizeRound(guess || '', correct);
   },
 
@@ -1463,6 +1547,9 @@ window.App = {
 
   // Salir del juego, con doble verificación (destruye la sala si eres el
   // anfitrión, o simplemente te quita a ti si no lo eres).
+  openHelp: () => { state.ui.showHelp = true; render(); },
+  closeHelp: () => { state.ui.showHelp = false; render(); },
+
   confirmLeave: () => { state.ui.leaveConfirming = true; render(); },
   cancelLeave: () => { state.ui.leaveConfirming = false; render(); },
   doLeave: async () => {
