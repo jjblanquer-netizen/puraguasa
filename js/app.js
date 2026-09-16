@@ -337,11 +337,10 @@ function screenOnboarding() {
         <img src="icons/hero.png" alt="PuraGuasa" class="hero-image sm" />
         <div class="brand-text">
           <div class="brand-name">PuraGuasa</div>
-          <div class="brand-tag">🔎 En busca del Intruso</div>
+          <div class="brand-tag">En busca del Intruso</div>
         </div>
       </div>
-      <div style="font-size:44px;margin-top:8px">${slide.emoji}</div>
-      <h2>${esc(slide.title)}</h2>
+      <h2 style="margin-top:8px">${esc(slide.title)}</h2>
       <p>${esc(slide.text)}</p>
     </div>
     <div class="chip-row" style="justify-content:center">
