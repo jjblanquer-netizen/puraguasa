@@ -69,6 +69,12 @@ body {
   width: 100%;
   margin: 0 auto;
   gap: 16px;
+}
+
+/* Animación de entrada: se aplica solo mediante JS (clase .anim-in en el
+   contenedor raíz #screen) cuando cambias de pantalla de verdad — nunca en
+   los refrescos del temporizador, o "temblaría" cada segundo. */
+#screen.anim-in {
   animation: screenIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
@@ -78,7 +84,7 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .screen { animation: none; }
+  #screen.anim-in { animation: none; }
 }
 
 .screen.center {
@@ -191,15 +197,75 @@ p { margin: 0; color: var(--text-secondary); line-height: 1.55; font-size: 15px;
 .btn.danger { background: linear-gradient(135deg, #F0475B, #C81E3A); box-shadow: 0 8px 20px rgba(240,71,91,0.35); }
 .btn.auto { width: auto; }
 
-.reset-link {
-  text-align: center;
+.icon-svg { display: inline-block; vertical-align: middle; flex-shrink: 0; }
+
+.icon-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  align-self: center;
   color: var(--text-muted);
-  font-size: 12px;
-  text-decoration: underline;
-  text-underline-offset: 2px;
+  font-size: 12.5px;
+  font-weight: 600;
   cursor: pointer;
-  padding: 4px 0 2px;
+  padding: 8px 16px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--surface-border);
+  background: var(--surface);
+  transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
 }
+.icon-link:active { transform: scale(0.97); }
+.icon-link:hover { color: var(--text-secondary); background: var(--surface-strong); }
+.icon-link .icon-svg { opacity: 0.85; }
+
+.host-badge {
+  display: inline-flex;
+  color: #F5B342;
+  filter: drop-shadow(0 0 4px rgba(245,179,66,0.5));
+}
+
+/* ---- Estado del lobby: esperando jugadores / listos ---- */
+.waiting-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--text-secondary);
+  font-size: 13.5px;
+  font-weight: 600;
+  text-align: center;
+  padding: 4px 0;
+}
+.waiting-dots { display: inline-flex; gap: 4px; flex-shrink: 0; }
+.waiting-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: dotPulse 1.4s ease-in-out infinite;
+}
+.waiting-dots span:nth-child(2) { animation-delay: 0.2s; }
+.waiting-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes dotPulse {
+  0%, 80%, 100% { opacity: 0.25; transform: scale(0.75); }
+  40% { opacity: 1; transform: scale(1.15); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .waiting-dots span { animation: none; opacity: 0.8; }
+}
+
+.ready-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--success);
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+  padding: 4px 0;
+}
+
 .btn-row { display: flex; gap: 10px; }
 .btn-row .btn { flex: 1; }
 
@@ -289,12 +355,16 @@ input:focus, select:focus { outline: none; border-color: var(--primary); box-sha
   color: transparent;
 }
 .room-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: center;
   font-size: 13px;
   color: var(--accent);
   text-align: center;
-  word-break: break-all;
   cursor: pointer;
 }
+.room-link span { word-break: break-all; }
 
 /* ---- Temporizador ---- */
 .timer-display {
