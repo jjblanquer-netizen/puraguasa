@@ -823,7 +823,7 @@ function screenReveal() {
     return `
       <div class="screen center">
         <div class="card center">
-          <div class="hero-emoji">🤫</div>
+          <img src="icons/secret-cat.gif" alt="" style="width:140px;height:140px;border-radius:24px" />
           <p>Ya sabes tu secreto. ¡Ni una palabra todavía!</p>
           <p class="muted">Esperando a que el resto también lo descubra… (${confirmedCount}/${players.length})</p>
         </div>
