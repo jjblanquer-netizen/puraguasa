@@ -1,7 +1,7 @@
 {
-  "name": "INTRUSO — Juego de deducción",
-  "short_name": "INTRUSO",
-  "description": "Descubre quién no sabe la palabra secreta. Juego social multijugador sin registro.",
+  "name": "PuraGuasa — En busca del Intruso",
+  "short_name": "PuraGuasa",
+  "description": "En busca del Intruso: descubre quién no sabe la palabra secreta. Juego social multijugador sin registro.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
