@@ -79,6 +79,7 @@ const state = {
     voteCandidateId: null,
     voteConfirming: false,
     resetConfirming: false,
+    editingProfile: false,
     onboardingIndex: 0,
     onboardingDontShow: false,
   },
@@ -279,8 +280,11 @@ function finishOnboarding() {
 
 // ---------------------------- Dispatcher de pantallas ----------------------------
 const RESET_ELIGIBLE_SCREENS = ['reveal', 'clues', 'debate', 'voting', 'voteResult', 'lastChance'];
+const IN_ROOM_SCREENS = ['lobby', 'config', 'reveal', 'clues', 'debate', 'voting', 'voteResult', 'lastChance', 'finalResult'];
 
 function renderScreen() {
+  if (state.ui.editingProfile) return screenEditProfile();
+
   let html;
   switch (state.screen) {
     case 'onboarding': html = screenOnboarding(); break;
@@ -300,7 +304,43 @@ function renderScreen() {
   if (isHost() && RESET_ELIGIBLE_SCREENS.includes(state.screen)) {
     html += hostResetControl();
   }
+  if (state.room?.players?.[me.id] && IN_ROOM_SCREENS.includes(state.screen)) {
+    html += `<div class="screen" style="padding-top:0;padding-bottom:4px"><div class="reset-link" onclick="App.openProfileEdit()">✏️ Editar mi jugador (${esc(me.name)})</div></div>`;
+  }
   return html;
+}
+
+// ---------------------------- Editar mi jugador ----------------------------
+// Accesible desde el lobby (tocando tu propia fila) y desde el enlace
+// discreto que aparece en el resto de pantallas de la partida — así se
+// puede corregir el nombre, avatar o color en cualquier momento, no solo
+// al crear o unirse a la sala.
+function screenEditProfile() {
+  return `
+    <div class="screen">
+      <h2>✏️ Editar mi jugador</h2>
+      <p>Los cambios se ven al instante para el resto de la sala.</p>
+      <div class="card" style="display:flex;flex-direction:column;gap:14px">
+        <div>
+          <p class="mb-0">Tu nombre</p>
+          <input type="text" placeholder="Escribe tu nombre" maxlength="20"
+            value="${esc(state.ui.nameInput)}" oninput="App.setNameInput(this.value)" />
+        </div>
+        <div>
+          <p class="mb-0">Tu avatar</p>
+          <div class="chip-row">${avatarPickerHtml()}</div>
+        </div>
+        <div>
+          <p class="mb-0">Tu color</p>
+          <div class="chip-row">${colorPickerHtml()}</div>
+        </div>
+        <div class="btn-row">
+          <button class="btn secondary auto" onclick="App.cancelProfileEdit()">Cerrar</button>
+          <button class="btn auto" onclick="App.saveProfileEdit()" ${state.ui.nameInput.trim() ? '' : 'disabled'}>Guardar nombre</button>
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 // ---------------------------- Control de reinicio (solo anfitrión) ----------------------------
@@ -452,13 +492,17 @@ function screenLobby() {
       <div class="card">
         <h3 style="margin-bottom:10px">Jugadores (${players.length})</h3>
         <div class="player-list">
-          ${players.map((p) => `
-            <div class="player-row">
+          ${players.map((p) => {
+            const mine = p.id === me.id;
+            return `
+            <div class="player-row" ${mine ? `onclick="App.openProfileEdit()" style="cursor:pointer"` : ''}>
               ${avatarHtml(p.avatarId, p.colorId, 44)}
               <span class="player-name">${esc(p.name)}${p.id === state.room.hostId ? ' 👑' : ''}</span>
+              ${mine ? '<span class="muted">✏️</span>' : ''}
               ${p.connected === false ? '<span class="muted">desconectado</span>' : ''}
             </div>
-          `).join('')}
+          `;
+          }).join('')}
         </div>
       </div>
 
@@ -1114,8 +1158,18 @@ window.App = {
   },
 
   setNameInput: (v) => { state.ui.nameInput = v; },
-  pickAvatar: (id) => { me.avatarId = id; saveMe(me); render(); },
-  pickColor: (id) => { me.colorId = id; saveMe(me); render(); },
+  pickAvatar: (id) => {
+    me.avatarId = id; saveMe(me); render();
+    if (state.code && state.room?.players?.[me.id]) {
+      DB.updateAt(`rooms/${state.code}/players/${me.id}`, { avatarId: id });
+    }
+  },
+  pickColor: (id) => {
+    me.colorId = id; saveMe(me); render();
+    if (state.code && state.room?.players?.[me.id]) {
+      DB.updateAt(`rooms/${state.code}/players/${me.id}`, { colorId: id });
+    }
+  },
 
   confirmJoin: async () => {
     const name = state.ui.nameInput.trim();
@@ -1257,6 +1311,28 @@ window.App = {
   goToConfigFromFinal: async () => { await DB.updateAt(`rooms/${state.code}/game`, { phase: 'config' }); },
 
   // Reinicio de emergencia (anfitrión) — vuelve al lobby para poder tocar la lista de jugadores.
+  // Editar mi jugador (nombre / avatar / color), en cualquier momento.
+  openProfileEdit: () => {
+    state.ui.nameInput = me.name;
+    state.ui.editingProfile = true;
+    render();
+  },
+  cancelProfileEdit: () => {
+    state.ui.editingProfile = false;
+    render();
+  },
+  saveProfileEdit: async () => {
+    const name = state.ui.nameInput.trim();
+    if (!name) return;
+    me.name = name;
+    saveMe(me);
+    state.ui.editingProfile = false;
+    render();
+    if (state.code && state.room?.players?.[me.id]) {
+      await DB.updateAt(`rooms/${state.code}/players/${me.id}`, { name: me.name });
+    }
+  },
+
   confirmReset: () => { state.ui.resetConfirming = true; render(); },
   cancelReset: () => { state.ui.resetConfirming = false; render(); },
   doReset: async () => {
