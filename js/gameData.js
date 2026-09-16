@@ -31,28 +31,30 @@ export const AVATAR_COLORS = [
     { id: 'rojo', hex: '#EF4444' },
 ];
 export const AVATARS = [
-    { id: 'zorro', emoji: '🦊', family: 'animal', colorId: 'naranja' },
-    { id: 'leon', emoji: '🦁', family: 'animal', colorId: 'amarillo' },
-    { id: 'panda', emoji: '🐼', family: 'animal', colorId: 'verde' },
-    { id: 'lobo', emoji: '🐺', family: 'animal', colorId: 'azul' },
-    { id: 'koala', emoji: '🐨', family: 'animal', colorId: 'turquesa' },
-    { id: 'tigre', emoji: '🐯', family: 'animal', colorId: 'naranja' },
-    { id: 'robot1', emoji: '🤖', family: 'robot', colorId: 'azul' },
-    { id: 'robot2', emoji: '🦾', family: 'robot', colorId: 'violeta' },
-    { id: 'alien1', emoji: '👽', family: 'alien', colorId: 'verde' },
-    { id: 'alien2', emoji: '🛸', family: 'alien', colorId: 'magenta' },
-    { id: 'monstruo1', emoji: '👹', family: 'monstruo', colorId: 'rojo' },
-    { id: 'monstruo2', emoji: '👾', family: 'monstruo', colorId: 'violeta' },
-    { id: 'fantasma', emoji: '👻', family: 'monstruo', colorId: 'turquesa' },
-    { id: 'heroe1', emoji: '🦸', family: 'heroe', colorId: 'rojo' },
-    { id: 'heroe2', emoji: '🦹', family: 'heroe', colorId: 'violeta' },
-    { id: 'ninja', emoji: '🥷', family: 'heroe', colorId: 'azul' },
-    { id: 'explorador1', emoji: '🧭', family: 'explorador', colorId: 'amarillo' },
-    { id: 'explorador2', emoji: '🏴‍☠️', family: 'explorador', colorId: 'naranja' },
-    { id: 'astronauta', emoji: '🧑‍🚀', family: 'explorador', colorId: 'azul' },
-    { id: 'dragon', emoji: '🐲', family: 'criatura', colorId: 'verde' },
-    { id: 'unicornio', emoji: '🦄', family: 'criatura', colorId: 'magenta' },
-    { id: 'fenix', emoji: '🔥', family: 'criatura', colorId: 'rojo' },
+    // Animales
+    { id: 'zorro', file: 'zorro.jpg', family: 'animales', colorId: 'naranja' },
+    { id: 'capibara', file: 'capibara.jpg', family: 'animales', colorId: 'amarillo' },
+    { id: 'mapache', file: 'mapache.jpg', family: 'animales', colorId: 'azul' },
+    { id: 'gato', file: 'gato.jpg', family: 'animales', colorId: 'violeta' },
+    { id: 'buho', file: 'buho.jpg', family: 'animales', colorId: 'turquesa' },
+    // Personas
+    { id: 'mujer-rizos', file: 'mujer-rizos.jpg', family: 'personas', colorId: 'magenta' },
+    { id: 'hombre-bigote', file: 'hombre-bigote.jpg', family: 'personas', colorId: 'verde' },
+    { id: 'mujer-violeta', file: 'mujer-violeta.jpg', family: 'personas', colorId: 'violeta' },
+    { id: 'mujer-mayor', file: 'mujer-mayor.jpg', family: 'personas', colorId: 'rojo' },
+    { id: 'hombre-moreno', file: 'hombre-moreno.jpg', family: 'personas', colorId: 'azul' },
+    // Superhéroes
+    { id: 'heroina-electrica', file: 'heroina-electrica.jpg', family: 'superheroes', colorId: 'azul' },
+    { id: 'heroe-naturaleza', file: 'heroe-naturaleza.jpg', family: 'superheroes', colorId: 'verde' },
+    { id: 'heroe-cosmico', file: 'heroe-cosmico.jpg', family: 'superheroes', colorId: 'violeta' },
+    { id: 'heroina-tecnologica', file: 'heroina-tecnologica.jpg', family: 'superheroes', colorId: 'turquesa' },
+    { id: 'heroe-solar', file: 'heroe-solar.jpg', family: 'superheroes', colorId: 'amarillo' },
+    // Aleatorios
+    { id: 'alien', file: 'alien.jpg', family: 'aleatorios', colorId: 'verde' },
+    { id: 'robot', file: 'robot.jpg', family: 'aleatorios', colorId: 'azul' },
+    { id: 'nube', file: 'nube.jpg', family: 'aleatorios', colorId: 'turquesa' },
+    { id: 'aguacate', file: 'aguacate.jpg', family: 'aleatorios', colorId: 'verde' },
+    { id: 'maga', file: 'maga.jpg', family: 'aleatorios', colorId: 'magenta' },
 ];
 export function getAvatar(id) {
     return AVATARS.find((a) => a.id === id) ?? AVATARS[0];
