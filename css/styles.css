@@ -1,32 +1,36 @@
 /* ============================================================
-   INTRUSO — Sistema visual
-   Fondo azul noche, degradados violeta/azul/turquesa/magenta,
-   tarjetas de cristal, tipografía redondeada, modo oscuro.
+   PURAGUASA — En busca del Intruso — Sistema visual
+   Fondo azul noche con degradados violeta/azul/turquesa/magenta,
+   cristal esmerilado, tipografía geométrica moderna, modo oscuro.
    ============================================================ */
 
 :root {
-  --bg: #0B0F2B;
-  --bg-alt: #131A3D;
-  --surface: rgba(255,255,255,0.06);
-  --surface-border: rgba(255,255,255,0.14);
-  --text: #F5F6FF;
-  --text-secondary: #A8AECB;
-  --text-muted: #6B7299;
+  --bg: #0A0D24;
+  --bg-alt: #121734;
+  --surface: rgba(255,255,255,0.055);
+  --surface-strong: rgba(255,255,255,0.09);
+  --surface-border: rgba(255,255,255,0.12);
+  --text: #F6F7FF;
+  --text-secondary: #A9AFD1;
+  --text-muted: #6E749B;
   --primary: #8B5CF6;
+  --primary-2: #6D28D9;
   --primary-alt: #3B82F6;
-  --accent: #14B8A6;
-  --accent-alt: #EC4899;
-  --danger: #EF4444;
+  --accent: #2DD4BF;
+  --accent-alt: #F472B6;
+  --danger: #F0475B;
   --warning: #F59E0B;
-  --success: #22C55E;
-  --radius-sm: 10px;
-  --radius-md: 16px;
-  --radius-lg: 24px;
+  --success: #2FD180;
+  --radius-sm: 12px;
+  --radius-md: 18px;
+  --radius-lg: 26px;
   --radius-pill: 999px;
-  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Inter, system-ui, sans-serif;
+  --font: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, system-ui, sans-serif;
+  --font-display: 'Space Grotesk', var(--font);
+  --shadow-soft: 0 10px 30px rgba(5,6,20,0.35);
 }
 
-* { box-sizing: border-box; }
+* { box-sizing: border-box; -webkit-font-smoothing: antialiased; }
 
 html, body {
   margin: 0;
@@ -39,9 +43,12 @@ html, body {
 }
 
 body {
-  background: radial-gradient(circle at 20% -10%, #3B0764 0%, transparent 45%),
-              radial-gradient(circle at 100% 0%, #0891B2 0%, transparent 40%),
-              linear-gradient(180deg, var(--bg) 0%, var(--bg-alt) 100%);
+  background:
+    radial-gradient(circle at 15% -8%, rgba(139,92,246,0.55) 0%, transparent 42%),
+    radial-gradient(circle at 105% 4%, rgba(45,212,191,0.35) 0%, transparent 38%),
+    radial-gradient(circle at 90% 85%, rgba(244,114,182,0.22) 0%, transparent 40%),
+    linear-gradient(180deg, var(--bg) 0%, var(--bg-alt) 100%);
+  background-attachment: fixed;
   min-height: 100vh;
   min-height: 100dvh;
 }
@@ -57,11 +64,21 @@ body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: max(20px, env(safe-area-inset-top)) 20px max(20px, env(safe-area-inset-bottom));
+  padding: max(20px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom));
   max-width: 480px;
   width: 100%;
   margin: 0 auto;
   gap: 16px;
+  animation: screenIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes screenIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .screen { animation: none; }
 }
 
 .screen.center {
@@ -70,18 +87,20 @@ body {
   text-align: center;
 }
 
-h1, h2, h3 { margin: 0; font-weight: 800; }
-h1 { font-size: 28px; letter-spacing: 1px; }
-h2 { font-size: 22px; }
+h1, h2, h3 { margin: 0; font-weight: 800; font-family: var(--font-display); letter-spacing: -0.2px; }
+h1 { font-size: 28px; letter-spacing: 0.5px; }
+h2 { font-size: 23px; }
 h3 { font-size: 16px; }
-p { margin: 0; color: var(--text-secondary); line-height: 1.5; }
+p { margin: 0; color: var(--text-secondary); line-height: 1.55; font-size: 15px; }
 
+/* ---- Marca ---- */
 .hero-title {
-  font-size: clamp(30px, 9vw, 42px);
-  font-weight: 900;
-  letter-spacing: 2px;
+  font-family: var(--font-display);
+  font-size: clamp(28px, 9vw, 40px);
+  font-weight: 700;
+  letter-spacing: 1px;
   text-align: center;
-  background: linear-gradient(135deg, #fff, #C4B5FD);
+  background: linear-gradient(135deg, #FFFFFF 10%, #C4B5FD 60%, #7DD3C0 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -92,32 +111,50 @@ p { margin: 0; color: var(--text-secondary); line-height: 1.5; }
   text-align: center;
   color: var(--accent);
   font-weight: 700;
-  font-size: 15px;
-  letter-spacing: 0.5px;
+  font-size: 14px;
+  letter-spacing: 0.3px;
 }
+
+.brand-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: center;
+}
+.brand-text { text-align: left; }
+.brand-name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: 0.3px;
+  color: #fff;
+}
+.brand-tag { color: var(--accent); font-size: 12.5px; font-weight: 700; }
 
 .hero-emoji { font-size: 56px; text-align: center; }
 .hero-image {
   display: block;
-  width: 140px;
-  height: 140px;
+  width: 132px;
+  height: 132px;
   margin: 0 auto;
-  border-radius: 32px;
-  box-shadow: 0 12px 32px rgba(139,92,246,0.35), 0 0 0 1px rgba(255,255,255,0.08);
+  border-radius: 30px;
+  box-shadow: 0 16px 40px rgba(139,92,246,0.4), 0 0 0 1px rgba(255,255,255,0.1);
 }
-.hero-image.sm { width: 88px; height: 88px; border-radius: 22px; }
+.hero-image.sm { width: 60px; height: 60px; border-radius: 16px; margin: 0; box-shadow: 0 8px 20px rgba(139,92,246,0.4), 0 0 0 1px rgba(255,255,255,0.1); }
 
-/* ---- Tarjetas de cristal ---- */
+/* ---- Tarjetas de cristal esmerilado ---- */
 .card {
-  background: var(--surface);
+  background: linear-gradient(180deg, var(--surface-strong), var(--surface));
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
   border: 1px solid var(--surface-border);
   border-radius: var(--radius-lg);
   padding: 20px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  box-shadow: var(--shadow-soft), inset 0 1px 0 rgba(255,255,255,0.06);
 }
 
-.card.glow-success { border-color: var(--success); box-shadow: 0 0 24px rgba(34,197,94,0.25); }
-.card.glow-danger { border-color: var(--danger); box-shadow: 0 0 24px rgba(239,68,68,0.25); }
+.card.glow-success { border-color: rgba(47,209,128,0.6); box-shadow: 0 0 28px rgba(47,209,128,0.22), var(--shadow-soft); }
+.card.glow-danger { border-color: rgba(240,71,91,0.6); box-shadow: 0 0 28px rgba(240,71,91,0.22), var(--shadow-soft); }
 .card.center { align-items: center; text-align: center; display: flex; flex-direction: column; gap: 10px; }
 
 /* ---- Botones ---- */
@@ -125,9 +162,10 @@ p { margin: 0; color: var(--text-secondary); line-height: 1.5; }
   min-height: 56px;
   border-radius: 18px;
   border: none;
-  font-size: 16px;
+  font-size: 15.5px;
   font-weight: 700;
-  font-family: inherit;
+  font-family: var(--font);
+  letter-spacing: 0.1px;
   padding: 14px 24px;
   cursor: pointer;
   display: inline-flex;
@@ -135,15 +173,22 @@ p { margin: 0; color: var(--text-secondary); line-height: 1.5; }
   justify-content: center;
   gap: 8px;
   width: 100%;
-  transition: opacity 0.15s, transform 0.1s;
+  transition: transform 0.12s ease, filter 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
   color: #fff;
-  background: var(--primary);
+  background: linear-gradient(135deg, var(--primary), var(--primary-2));
+  box-shadow: 0 8px 20px rgba(109,40,217,0.35);
 }
-.btn:active { transform: scale(0.98); }
-.btn:disabled { opacity: 0.4; cursor: not-allowed; }
-.btn.secondary { background: var(--surface); color: var(--text); border: 1px solid var(--surface-border); }
-.btn.ghost { background: transparent; color: var(--text-secondary); min-height: 44px; }
-.btn.danger { background: var(--danger); }
+.btn:active { transform: scale(0.97); filter: brightness(0.96); }
+.btn:disabled { opacity: 0.38; cursor: not-allowed; box-shadow: none; }
+.btn.secondary {
+  background: var(--surface-strong);
+  color: var(--text);
+  border: 1px solid var(--surface-border);
+  box-shadow: none;
+  backdrop-filter: blur(12px);
+}
+.btn.ghost { background: transparent; color: var(--text-secondary); min-height: 44px; box-shadow: none; }
+.btn.danger { background: linear-gradient(135deg, #F0475B, #C81E3A); box-shadow: 0 8px 20px rgba(240,71,91,0.35); }
 .btn.auto { width: auto; }
 
 .reset-link {
@@ -151,6 +196,7 @@ p { margin: 0; color: var(--text-secondary); line-height: 1.5; }
   color: var(--text-muted);
   font-size: 12px;
   text-decoration: underline;
+  text-underline-offset: 2px;
   cursor: pointer;
   padding: 4px 0 2px;
 }
@@ -166,10 +212,11 @@ input[type="text"], input[type="number"], select {
   padding: 14px 16px;
   color: var(--text);
   font-size: 15px;
-  font-family: inherit;
+  font-family: var(--font);
+  transition: border-color 0.15s ease;
 }
 input::placeholder { color: var(--text-muted); }
-input:focus, select:focus { outline: 2px solid var(--primary); }
+input:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(139,92,246,0.2); }
 
 /* ---- Chips ---- */
 .chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -183,8 +230,15 @@ input:focus, select:focus { outline: 2px solid var(--primary); }
   font-weight: 600;
   cursor: pointer;
   user-select: none;
+  transition: transform 0.1s ease, background 0.15s ease, border-color 0.15s ease;
 }
-.chip.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+.chip:active { transform: scale(0.96); }
+.chip.active {
+  background: linear-gradient(135deg, var(--primary), var(--primary-2));
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(109,40,217,0.35);
+}
 .chip.disabled { opacity: 0.4; pointer-events: none; }
 
 /* ---- Avatares ---- */
@@ -206,7 +260,7 @@ input:focus, select:focus { outline: 2px solid var(--primary); }
   gap: 12px;
   padding: 10px 4px;
 }
-.player-name { flex: 1; font-weight: 600; font-size: 15px; }
+.player-name { flex: 1; font-weight: 600; font-size: 15px; color: var(--text); }
 .player-list { display: flex; flex-direction: column; gap: 6px; }
 
 /* ---- Toggle switch ---- */
@@ -216,31 +270,37 @@ input:focus, select:focus { outline: 2px solid var(--primary); }
 .switch-track {
   position: absolute; inset: 0; background: rgba(255,255,255,0.15); border-radius: 999px; cursor: pointer; transition: background 0.15s;
 }
-.switch input:checked + .switch-track { background: var(--primary); }
+.switch input:checked + .switch-track { background: linear-gradient(135deg, var(--primary), var(--primary-2)); }
 .switch-thumb {
-  position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; background: #fff; border-radius: 50%; transition: transform 0.15s;
+  position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; background: #fff; border-radius: 50%; transition: transform 0.15s; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
 }
 .switch input:checked ~ .switch-thumb { transform: translateX(20px); }
 
 /* ---- Código de sala ---- */
 .room-code {
-  font-size: 40px;
-  font-weight: 900;
-  letter-spacing: 8px;
+  font-family: var(--font-display);
+  font-size: 42px;
+  font-weight: 700;
+  letter-spacing: 9px;
   text-align: center;
-  color: #fff;
+  background: linear-gradient(135deg, #fff, #C4B5FD);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 .room-link {
   font-size: 13px;
   color: var(--accent);
   text-align: center;
   word-break: break-all;
+  cursor: pointer;
 }
 
 /* ---- Temporizador ---- */
 .timer-display {
+  font-family: var(--font-display);
   font-size: 56px;
-  font-weight: 900;
+  font-weight: 700;
   text-align: center;
   font-variant-numeric: tabular-nums;
 }
@@ -249,7 +309,7 @@ input:focus, select:focus { outline: 2px solid var(--primary); }
 /* ---- Secreto (hold to reveal) ---- */
 .secret-box {
   min-height: 140px;
-  border: 1px dashed var(--surface-border);
+  border: 1.5px dashed var(--surface-border);
   border-radius: var(--radius-lg);
   display: flex;
   align-items: center;
@@ -258,10 +318,10 @@ input:focus, select:focus { outline: 2px solid var(--primary); }
   gap: 8px;
   padding: 20px;
   text-align: center;
-  background: rgba(0,0,0,0.15);
+  background: rgba(0,0,0,0.18);
 }
-.secret-word { font-size: 30px; font-weight: 900; }
-.intruso-banner { font-size: 22px; font-weight: 900; color: #FEE2E2; }
+.secret-word { font-family: var(--font-display); font-size: 30px; font-weight: 700; }
+.intruso-banner { font-family: var(--font-display); font-size: 22px; font-weight: 700; color: #FFE2E7; }
 
 /* ---- Confeti simple ---- */
 .confetti-row { display: flex; gap: 8px; justify-content: center; font-size: 26px; }
@@ -272,7 +332,9 @@ input:focus, select:focus { outline: 2px solid var(--primary); }
   bottom: max(20px, env(safe-area-inset-bottom));
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(20,20,35,0.95);
+  background: rgba(18,20,45,0.85);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   border: 1px solid var(--surface-border);
   color: var(--text);
   padding: 12px 20px;
@@ -281,6 +343,7 @@ input:focus, select:focus { outline: 2px solid var(--primary); }
   z-index: 999;
   max-width: 90%;
   text-align: center;
+  box-shadow: var(--shadow-soft);
 }
 
 /* ---- Utilidades ---- */
