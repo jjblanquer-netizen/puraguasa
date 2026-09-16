@@ -394,7 +394,7 @@ function screenOnboarding() {
     </label>
     <div class="btn-row">
       <button class="btn ghost auto" onclick="App.skipOnboarding()">Saltar</button>
-      <button class="btn auto" onclick="App.nextOnboarding()">${isLast ? '¡Vamos! 🎉' : 'Siguiente'}</button>
+      <button class="btn auto" onclick="App.nextOnboarding()">${isLast ? '¡Vamos!' : 'Siguiente'}</button>
     </div>
   `;
 }
@@ -402,7 +402,7 @@ function screenOnboarding() {
 // ---------------------------- Landing ----------------------------
 function screenLanding() {
   const rejoin = state.ui.rejoinCode
-    ? `<button class="btn secondary" onclick="App.rejoinLast()">▶️ Continuar en ${esc(state.ui.rejoinCode)}</button>`
+    ? `<button class="btn secondary" onclick="App.rejoinLast()">Continuar en ${esc(state.ui.rejoinCode)}</button>`
     : '';
   return `
     <div class="screen center">
@@ -412,8 +412,8 @@ function screenLanding() {
       <p>Descubre quién no sabe la palabra secreta. Cada jugador con su propio móvil.</p>
     </div>
     <div class="card" style="display:flex;flex-direction:column;gap:12px">
-      <button class="btn" onclick="App.goCreate()">🎮 Crear partida</button>
-      <button class="btn secondary" onclick="App.goJoinForm()">🔗 Unirme con un código</button>
+      <button class="btn" onclick="App.goCreate()">Crear partida</button>
+      <button class="btn secondary" onclick="App.goJoinForm()">Unirme con un código</button>
       ${rejoin}
     </div>
   `;
@@ -508,7 +508,7 @@ function screenLobby() {
 
       ${host ? `
         <p class="muted text-center">Se necesitan al menos 3 jugadores conectados para empezar.</p>
-        <button class="btn" onclick="App.goConfig()" ${players.length >= 3 ? '' : 'disabled'}>⚙️ Configurar y empezar</button>
+        <button class="btn" onclick="App.goConfig()" ${players.length >= 3 ? '' : 'disabled'}>Configurar y empezar</button>
         <button class="btn ghost" onclick="App.leaveRoom()">Cerrar sala y salir</button>
       ` : `
         <div class="card center"><p>⏳ Esperando a que el anfitrión configure y empiece la partida…</p></div>
@@ -636,7 +636,7 @@ function screenConfig() {
 
       <div class="btn-row">
         <button class="btn secondary" onclick="App.backToLobby()">Atrás</button>
-        <button class="btn" onclick="App.startGame()">🚀 Empezar</button>
+        <button class="btn" onclick="App.startGame()">Empezar</button>
       </div>
     </div>
   `;
@@ -700,9 +700,9 @@ function screenReveal() {
       <button class="btn"
         onmousedown="App.setPeek(true)" onmouseup="App.setPeek(false)" onmouseleave="App.setPeek(false)"
         ontouchstart="App.setPeek(true)" ontouchend="App.setPeek(false)">
-        👆 Mantén pulsado para descubrirlo
+        Mantén pulsado para descubrirlo
       </button>
-      <button class="btn secondary" onclick="App.confirmReveal()">✅ Ya lo sé, ¡vamos!</button>
+      <button class="btn secondary" onclick="App.confirmReveal()">Ya lo sé, ¡vamos!</button>
     </div>
   `;
 }
@@ -787,7 +787,7 @@ function screenDebate() {
             <button class="btn secondary" onclick="App.addDebateTime()">+30s</button>
           ` : ''}
         </div>
-        <button class="btn" onclick="App.goVoting()">🗳️ Terminar debate y votar</button>
+        <button class="btn" onclick="App.goVoting()">Terminar debate y votar</button>
       ` : `<p class="muted">El anfitrión controla el temporizador.</p>`}
     </div>
   `;
@@ -977,10 +977,10 @@ function screenFinalResult() {
       </div>
 
       ${isHost() ? `
-        <button class="btn" onclick="App.playAgain(false)">🔁 Revancha (puntos a cero)</button>
-        <button class="btn secondary" onclick="App.playAgain(true)">➕ Nueva ronda (conservar puntos)</button>
-        <button class="btn secondary" onclick="App.goToConfigFromFinal()">⚙️ Cambiar configuración</button>
-        <button class="btn ghost" onclick="App.leaveRoom()">🏠 Cerrar sala y salir</button>
+        <button class="btn" onclick="App.playAgain(false)">Revancha (puntos a cero)</button>
+        <button class="btn secondary" onclick="App.playAgain(true)">Nueva ronda (conservar puntos)</button>
+        <button class="btn secondary" onclick="App.goToConfigFromFinal()">Cambiar configuración</button>
+        <button class="btn ghost" onclick="App.leaveRoom()">Cerrar sala y salir</button>
       ` : `<p class="muted text-center">El anfitrión decide el siguiente paso.</p>
         <button class="btn ghost" onclick="App.leaveRoom()">Salir de la sala</button>`}
     </div>
