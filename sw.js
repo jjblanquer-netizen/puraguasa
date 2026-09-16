@@ -1,11 +1,17 @@
 // ============================================================
-// INTRUSO — Service Worker
-// Cachea el "shell" estático de la app para que cargue rápido y
-// funcione offline para todo lo que no dependa de Firebase (la
-// partida en sí necesita conexión, al ser multijugador en vivo).
-// Sube este número cada vez que cambies archivos estáticos.
+// PuraGuasa — Service Worker
+// ------------------------------------------------------------
+// Estrategia "red primero, caché como red de seguridad": esta
+// app depende de Firebase para funcionar (no tiene sentido un
+// modo sin conexión real), así que priorizamos ver siempre la
+// última versión subida en vez de arriesgarnos a servir HTML/JS
+// desactualizado desde caché. Si no hay red, cae a lo último que
+// se guardó en caché para no dejar una pantalla en blanco.
+//
+// Sube este número cada vez que cambies archivos estáticos, para
+// forzar a los navegadores a limpiar la caché antigua.
 // ============================================================
-const CACHE = 'intruso-v1';
+const CACHE = 'puraguasa-v2';
 const SHELL_FILES = [
   './',
   './index.html',
@@ -37,24 +43,24 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Nunca cachear llamadas a Firebase (deben ir siempre a la red para tener
-  // datos en tiempo real).
+  // Nunca interceptar llamadas a Firebase: deben ir siempre a la red para
+  // tener datos de la partida en tiempo real.
   if (url.hostname.includes('firebaseio.com') || url.hostname.includes('firebasedatabase.app') || url.hostname.includes('googleapis.com')) {
     return;
   }
+  if (event.request.method !== 'GET') return;
 
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      const network = fetch(event.request)
-        .then((response) => {
-          if (response.ok && event.request.method === 'GET') {
-            const clone = response.clone();
-            caches.open(CACHE).then((cache) => cache.put(event.request, clone));
-          }
-          return response;
-        })
-        .catch(() => cached);
-      return cached || network;
-    })
+    fetch(event.request)
+      .then((response) => {
+        // Red disponible: usamos siempre la respuesta fresca, y de paso
+        // actualizamos la caché por si hace falta como red de seguridad.
+        if (response.ok) {
+          const clone = response.clone();
+          caches.open(CACHE).then((cache) => cache.put(event.request, clone));
+        }
+        return response;
+      })
+      .catch(() => caches.match(event.request)) // sin red: última versión guardada
   );
 });
