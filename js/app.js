@@ -135,8 +135,8 @@ function avatarHtml(avatarId, colorId, size = 56, state2 = '') {
   const a = getAvatar(avatarId);
   const hex = getColorHex(colorId);
   const badge = { suspect: '🤔', winner: '🏆', loser: '💥', voting: '🗳️' }[state2] || '';
-  return `<div class="avatar" style="width:${size}px;height:${size}px;background:${hex}33;border-color:${hex}">
-    <span class="avatar-emoji" style="font-size:${Math.round(size * 0.5)}px">${a.emoji}</span>
+  return `<div class="avatar" style="width:${size}px;height:${size}px;border-color:${hex}">
+    <img class="avatar-img" src="avatars/${a.file}" alt="" loading="lazy" />
     ${badge ? `<span style="position:absolute;bottom:-4px;right:-4px;font-size:${Math.round(size * 0.28)}px">${badge}</span>` : ''}
   </div>`;
 }
@@ -383,7 +383,7 @@ function screenEditProfile() {
         </div>
         <div>
           <p class="mb-0">Tu avatar</p>
-          <div class="chip-row">${avatarPickerHtml()}</div>
+          ${avatarPickerHtml()}
         </div>
         <div>
           <p class="mb-0">Tu color</p>
@@ -526,7 +526,7 @@ function screenJoin() {
         </div>
         <div>
           <p class="mb-0">Tu avatar</p>
-          <div class="chip-row">${avatarPickerHtml()}</div>
+          ${avatarPickerHtml()}
         </div>
         <div>
           <p class="mb-0">Tu color</p>
@@ -541,10 +541,22 @@ function screenJoin() {
 }
 
 function avatarPickerHtml() {
-  return AVATARS.map((a) => `
-    <span class="chip ${a.id === me.avatarId ? 'active' : ''}" style="font-size:20px;padding:8px 12px"
-      onclick="App.pickAvatar('${a.id}')">${a.emoji}</span>
-  `).join('');
+  const familyLabels = { animales: 'Animales', personas: 'Personas', superheroes: 'Superhéroes', aleatorios: 'Aleatorios' };
+  const families = [...new Set(AVATARS.map((a) => a.family))];
+  return `<div style="display:flex;flex-direction:column;gap:10px;width:100%">
+    ${families.map((fam) => `
+      <div>
+        <p class="muted" style="font-size:11px;margin:0 0 6px;text-transform:uppercase;letter-spacing:0.6px">${familyLabels[fam] || fam}</p>
+        <div class="chip-row">
+          ${AVATARS.filter((a) => a.family === fam).map((a) => `
+            <span class="avatar-pick ${a.id === me.avatarId ? 'active' : ''}" onclick="App.pickAvatar('${a.id}')">
+              <img src="avatars/${a.file}" alt="" loading="lazy" />
+            </span>
+          `).join('')}
+        </div>
+      </div>
+    `).join('')}
+  </div>`;
 }
 
 function colorPickerHtml() {
