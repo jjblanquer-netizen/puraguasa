@@ -111,6 +111,25 @@ function esc(str) {
   }[c]));
 }
 
+// ---------------------------- Sistema de iconos ----------------------------
+// Trazos SVG propios (no emoji de sistema): se ven idénticos en cualquier
+// móvil, heredan el color del texto que los rodea (currentColor) y se
+// pueden colorear/animar con CSS como cualquier otro elemento.
+const ICONS = {
+  edit: '<path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>',
+  link: '<rect x="9" y="9" width="12" height="12" rx="3"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+  crown: '<path d="M3 8l4.5 3.2L12 4l4.5 7.2L21 8l-2 10H5L3 8z" stroke-linejoin="round"/>',
+  refresh: '<path d="M21 8a9 9 0 0 0-15.5-4.5M3 3v5h5"/><path d="M3 16a9 9 0 0 0 15.5 4.5M21 21v-5h-5"/>',
+  close: '<path d="M18 6 6 18M6 6l12 12"/>',
+  check: '<path d="M20 6 9 17l-5-5"/>',
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>',
+};
+
+function icon(name, size = 16) {
+  const inner = ICONS[name] || '';
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-svg">${inner}</svg>`;
+}
+
 function avatarHtml(avatarId, colorId, size = 56, state2 = '') {
   const a = getAvatar(avatarId);
   const hex = getColorHex(colorId);
@@ -132,10 +151,23 @@ function isHost() {
   return state.room && state.room.hostId === me.id;
 }
 
+let lastAnimatedKey = null;
+
 function render() {
   const screen = $('#screen');
   screen.innerHTML = renderScreen();
   screen.scrollTop = 0;
+
+  // Anima la entrada solo cuando cambia la pantalla lógica (o un panel local
+  // como editar perfil), nunca en los refrescos del temporizador — si no,
+  // "temblaría" cada segundo al recrearse el contenido.
+  const key = state.ui.editingProfile ? 'editProfile' : state.screen;
+  if (key !== lastAnimatedKey) {
+    lastAnimatedKey = key;
+    screen.classList.remove('anim-in');
+    void screen.offsetWidth; // fuerza un reflow para poder reiniciar la animación
+    screen.classList.add('anim-in');
+  }
 }
 
 // ---------------------------- Arranque y enrutado ----------------------------
@@ -305,7 +337,7 @@ function renderScreen() {
     html += hostResetControl();
   }
   if (state.room?.players?.[me.id] && IN_ROOM_SCREENS.includes(state.screen)) {
-    html += `<div class="screen" style="padding-top:0;padding-bottom:4px"><div class="reset-link" onclick="App.openProfileEdit()">✏️ Editar mi jugador (${esc(me.name)})</div></div>`;
+    html += `<div class="screen" style="padding-top:0;padding-bottom:4px"><div class="icon-link" onclick="App.openProfileEdit()">${icon('edit', 14)}<span>Editar mi jugador (${esc(me.name)})</span></div></div>`;
   }
   return html;
 }
@@ -318,7 +350,7 @@ function renderScreen() {
 function screenEditProfile() {
   return `
     <div class="screen">
-      <h2>✏️ Editar mi jugador</h2>
+      <h2 style="display:flex;align-items:center;gap:8px">${icon('edit', 20)} Editar mi jugador</h2>
       <p>Los cambios se ven al instante para el resto de la sala.</p>
       <div class="card" style="display:flex;flex-direction:column;gap:14px">
         <div>
@@ -362,7 +394,7 @@ function hostResetControl() {
       </div>
     `;
   }
-  return `<div class="screen" style="padding-top:0;padding-bottom:4px"><div class="reset-link" onclick="App.confirmReset()">🔄 Reiniciar partida (volver al lobby)</div></div>`;
+  return `<div class="screen" style="padding-top:0;padding-bottom:4px"><div class="icon-link" onclick="App.confirmReset()">${icon('refresh', 14)}<span>Reiniciar partida (volver al lobby)</span></div></div>`;
 }
 
 // ---------------------------- Onboarding ----------------------------
@@ -477,6 +509,22 @@ function colorPickerHtml() {
 }
 
 // ---------------------------- Lobby ----------------------------
+// Indicador de estado del lobby: puntitos animados mientras faltan
+// jugadores por unirse, y una confirmación en verde cuando ya hay
+// suficientes para empezar.
+function lobbyWaitingBlock(players) {
+  const missing = Math.max(0, 3 - players.length);
+  if (missing > 0) {
+    return `
+      <div class="waiting-row">
+        <span class="waiting-dots"><span></span><span></span><span></span></span>
+        <span>Esperando a que se ${missing === 1 ? 'una' : 'unan'} ${missing === 1 ? 'un jugador' : missing + ' jugadores'} más…</span>
+      </div>
+    `;
+  }
+  return `<div class="ready-row">${icon('check', 16)}<span>¡Listos para empezar!</span></div>`;
+}
+
 function screenLobby() {
   const players = playersArray(state.room);
   const host = isHost();
@@ -486,7 +534,7 @@ function screenLobby() {
       <div class="text-center">
         <p class="mb-0">Código de la sala</p>
         <div class="room-code">${esc(state.code)}</div>
-        <div class="room-link" onclick="App.copyLink()">🔗 Toca para copiar el enlace de invitación</div>
+        <div class="room-link" onclick="App.copyLink()">${icon('link', 14)}<span>Toca para copiar el enlace de invitación</span></div>
       </div>
 
       <div class="card">
@@ -494,11 +542,13 @@ function screenLobby() {
         <div class="player-list">
           ${players.map((p) => {
             const mine = p.id === me.id;
+            const isHostPlayer = p.id === state.room.hostId;
             return `
             <div class="player-row" ${mine ? `onclick="App.openProfileEdit()" style="cursor:pointer"` : ''}>
               ${avatarHtml(p.avatarId, p.colorId, 44)}
-              <span class="player-name">${esc(p.name)}${p.id === state.room.hostId ? ' 👑' : ''}</span>
-              ${mine ? '<span class="muted">✏️</span>' : ''}
+              <span class="player-name">${esc(p.name)}</span>
+              ${isHostPlayer ? `<span class="host-badge" title="Anfitrión">${icon('crown', 15)}</span>` : ''}
+              ${mine ? `<span class="muted" style="display:inline-flex">${icon('edit', 15)}</span>` : ''}
               ${p.connected === false ? '<span class="muted">desconectado</span>' : ''}
             </div>
           `;
@@ -507,11 +557,13 @@ function screenLobby() {
       </div>
 
       ${host ? `
-        <p class="muted text-center">Se necesitan al menos 3 jugadores conectados para empezar.</p>
+        ${lobbyWaitingBlock(players)}
         <button class="btn" onclick="App.goConfig()" ${players.length >= 3 ? '' : 'disabled'}>Configurar y empezar</button>
         <button class="btn ghost" onclick="App.leaveRoom()">Cerrar sala y salir</button>
       ` : `
-        <div class="card center"><p>⏳ Esperando a que el anfitrión configure y empiece la partida…</p></div>
+        ${players.length < 3
+          ? lobbyWaitingBlock(players)
+          : `<div class="card center">${icon('clock', 18)}<p>Esperando a que el anfitrión configure y empiece la partida…</p></div>`}
         <button class="btn ghost" onclick="App.leaveRoom()">Salir de la sala</button>
       `}
     </div>
@@ -721,10 +773,32 @@ function screenClues() {
     ? (cluesPaused ? Math.ceil(game.turnPausedRemaining / 1000) : Math.max(0, Math.ceil(((game.turnEndAt || 0) - serverNow()) / 1000)))
     : null;
   const isLast = turnIndex >= order.length - 1;
+  const host = isHost();
+  const isMyTurn = currentId === me.id;
 
-  if (isHost() && turnSeconds > 0 && remaining === 0 && !cluesPaused && !state.locks.clueAdvance) {
+  if (host && turnSeconds > 0 && remaining === 0 && !cluesPaused && !state.locks.clueAdvance) {
     state.locks.clueAdvance = true;
     queueMicrotask(async () => { await advanceClueTurn(); state.locks.clueAdvance = false; });
+  }
+
+  let controls;
+  if (isMyTurn) {
+    controls = `
+      <div class="btn-row">
+        ${host && turnSeconds > 0 ? `<button class="btn secondary auto" onclick="App.toggleCluesPause()">${cluesPaused ? 'Reanudar' : 'Pausar'}</button>` : ''}
+        <button class="btn" onclick="App.advanceClueTurnManual()">${isLast ? 'Ya la he dado, ir al debate' : 'Ya la he dado, siguiente'}</button>
+      </div>
+    `;
+  } else if (host) {
+    controls = `
+      <div class="btn-row">
+        ${turnSeconds > 0 ? `<button class="btn secondary auto" onclick="App.toggleCluesPause()">${cluesPaused ? 'Reanudar' : 'Pausar'}</button>` : ''}
+        <button class="btn ghost auto" onclick="App.advanceClueTurnManual()">Forzar avance</button>
+      </div>
+      <p class="muted text-center">Esperando a que ${esc(current ? current.name : '')} dé su pista…</p>
+    `;
+  } else {
+    controls = `<p class="muted text-center">Esperando a que ${esc(current ? current.name : '')} dé su pista…</p>`;
   }
 
   return `
@@ -735,7 +809,7 @@ function screenClues() {
       <div class="card center">
         ${current ? avatarHtml(current.avatarId, current.colorId, 84, 'voting') : ''}
         <h3>${current ? esc(current.name) : ''}</h3>
-        <p class="muted">Le toca dar su pista</p>
+        <p class="muted">${isMyTurn ? '¡Te toca a ti!' : 'Le toca dar su pista'}</p>
         ${remaining !== null ? `<div class="timer-display ${remaining <= 10 ? 'timer-warning' : ''}">${remaining}s</div>` : '<p class="muted">⏱ Sin límite de tiempo</p>'}
       </div>
 
@@ -747,12 +821,7 @@ function screenClues() {
         }).join('')}
       </div>
 
-      ${isHost() ? `
-        <div class="btn-row">
-          ${turnSeconds > 0 ? `<button class="btn secondary auto" onclick="App.toggleCluesPause()">${cluesPaused ? 'Reanudar' : 'Pausar'}</button>` : ''}
-          <button class="btn" onclick="App.advanceClueTurnManual()">${isLast ? 'Ir al debate' : 'Siguiente jugador'}</button>
-        </div>
-      ` : `<p class="muted text-center">El anfitrión controla el ritmo de esta fase.</p>`}
+      ${controls}
     </div>
   `;
 }
@@ -1194,7 +1263,7 @@ window.App = {
   copyLink: () => {
     const url = `${location.origin}${location.pathname}#${state.code}`;
     navigator.clipboard?.writeText(url).then(
-      () => showToast('Enlace copiado 🔗'),
+      () => showToast('Enlace copiado'),
       () => showToast(url)
     );
   },
