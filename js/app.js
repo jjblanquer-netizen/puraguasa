@@ -14,6 +14,30 @@ import { CATEGORIES, AVATARS, AVATAR_COLORS, getAvatar, getColorHex, TERMS } fro
 // ---------------------------- Identidad local ----------------------------
 const ME_KEY = 'intruso.me';
 const LAST_ROOM_KEY = 'intruso.lastRoom';
+const ONBOARDING_KEY = 'intruso.onboardingSeen';
+
+const ONBOARDING_SLIDES = [
+  {
+    emoji: '🔍',
+    title: 'Descubre el secreto',
+    text: 'Todos los jugadores reciben la misma palabra secreta en su propio móvil… excepto el Intruso, que no tiene ni idea de qué va la cosa.',
+  },
+  {
+    emoji: '💬',
+    title: 'Da pistas sin pasarte',
+    text: 'Por turnos, cada uno dice una palabra relacionada con el secreto. ¡Cuidado! Si eres muy obvio, le regalas la respuesta al Intruso.',
+  },
+  {
+    emoji: '🗳️',
+    title: 'Debate y vota en secreto',
+    text: 'Tras comentar las pistas entre todos, cada jugador vota desde su propio móvil a quién cree que es el Intruso. Nadie ve el voto de los demás.',
+  },
+  {
+    emoji: '🎭',
+    title: '¡Que gane el mejor!',
+    text: 'Si descubrís al Intruso, tiene una última oportunidad de adivinar la palabra. Si consigue pasar desapercibido… ¡gana él solito!',
+  },
+];
 
 function loadMe() {
   try {
@@ -55,6 +79,8 @@ const state = {
     voteCandidateId: null,
     voteConfirming: false,
     resetConfirming: false,
+    onboardingIndex: 0,
+    onboardingDontShow: false,
   },
   lastVoteRound: 0,
   locks: { clueAdvance: false, debateAdvance: false },
@@ -117,9 +143,16 @@ async function init() {
 
   const hashCode = (location.hash || '').replace('#', '').trim().toUpperCase();
   const lastRoom = localStorage.getItem(LAST_ROOM_KEY);
+  const onboardingSeen = localStorage.getItem(ONBOARDING_KEY);
 
   if (hashCode) {
+    // Alguien entra desde un enlace de invitación: directos a unirse, sin
+    // interponer el onboarding.
     await tryEnterRoom(hashCode);
+  } else if (!onboardingSeen) {
+    state.screen = 'onboarding';
+    state.ui.onboardingIndex = 0;
+    render();
   } else if (lastRoom) {
     // Ofrecemos reconectar a la última partida en vez de forzarlo.
     state.screen = 'landing';
@@ -236,12 +269,21 @@ function leaveToLanding() {
   render();
 }
 
+function finishOnboarding() {
+  if (state.ui.onboardingDontShow) {
+    localStorage.setItem(ONBOARDING_KEY, '1');
+  }
+  state.screen = 'landing';
+  render();
+}
+
 // ---------------------------- Dispatcher de pantallas ----------------------------
 const RESET_ELIGIBLE_SCREENS = ['reveal', 'clues', 'debate', 'voting', 'voteResult', 'lastChance'];
 
 function renderScreen() {
   let html;
   switch (state.screen) {
+    case 'onboarding': html = screenOnboarding(); break;
     case 'landing': html = screenLanding(); break;
     case 'join': html = screenJoin(); break;
     case 'lobby': html = screenLobby(); break;
@@ -283,6 +325,35 @@ function hostResetControl() {
   return `<div class="screen" style="padding-top:0;padding-bottom:4px"><div class="reset-link" onclick="App.confirmReset()">🔄 Reiniciar partida (volver al lobby)</div></div>`;
 }
 
+// ---------------------------- Onboarding ----------------------------
+function screenOnboarding() {
+  const i = state.ui.onboardingIndex || 0;
+  const slide = ONBOARDING_SLIDES[i];
+  const isLast = i === ONBOARDING_SLIDES.length - 1;
+
+  return `
+    <div class="screen center">
+      <img src="icons/hero.png" alt="PuraGuasa" class="hero-image sm" />
+      <div style="font-size:44px">${slide.emoji}</div>
+      <h2>${esc(slide.title)}</h2>
+      <p>${esc(slide.text)}</p>
+    </div>
+    <div class="chip-row" style="justify-content:center">
+      ${ONBOARDING_SLIDES.map((_, idx) => `
+        <span style="width:${idx === i ? 22 : 8}px;height:8px;border-radius:4px;background:${idx === i ? 'var(--primary)' : 'rgba(255,255,255,0.25)'};display:inline-block"></span>
+      `).join('')}
+    </div>
+    <label style="display:flex;align-items:center;gap:8px;justify-content:center;color:var(--text-muted);font-size:13px;padding:4px 0;cursor:pointer">
+      <input type="checkbox" ${state.ui.onboardingDontShow ? 'checked' : ''} onchange="App.setOnboardingDontShow(this.checked)" style="width:18px;height:18px;accent-color:var(--primary)" />
+      No volver a mostrar esto
+    </label>
+    <div class="btn-row">
+      <button class="btn ghost auto" onclick="App.skipOnboarding()">Saltar</button>
+      <button class="btn auto" onclick="App.nextOnboarding()">${isLast ? '¡Vamos! 🎉' : 'Siguiente'}</button>
+    </div>
+  `;
+}
+
 // ---------------------------- Landing ----------------------------
 function screenLanding() {
   const rejoin = state.ui.rejoinCode
@@ -290,7 +361,7 @@ function screenLanding() {
     : '';
   return `
     <div class="screen center">
-      <div class="hero-emoji">🕵️‍♂️</div>
+      <img src="icons/hero.png" alt="PuraGuasa" class="hero-image" />
       <div class="hero-title">PURAGUASA</div>
       <p class="tagline">🔎 En busca del Intruso</p>
       <p>Descubre quién no sabe la palabra secreta. Cada jugador con su propio móvil.</p>
@@ -1007,6 +1078,19 @@ async function finalizeRound(guess, correct) {
 
 // ---------------------------- Acciones expuestas a la interfaz (onclick) ----------------------------
 window.App = {
+  // Onboarding
+  setOnboardingDontShow: (v) => { state.ui.onboardingDontShow = v; },
+  nextOnboarding: () => {
+    const i = state.ui.onboardingIndex || 0;
+    if (i < ONBOARDING_SLIDES.length - 1) {
+      state.ui.onboardingIndex = i + 1;
+      render();
+    } else {
+      finishOnboarding();
+    }
+  },
+  skipOnboarding: () => finishOnboarding(),
+
   // Landing / navegación inicial
   goCreate: async () => {
     if (!me.name) { state.ui.pendingCreate = true; state.screen = 'join'; state.code = null; render(); return; }
