@@ -97,6 +97,15 @@ p { margin: 0; color: var(--text-secondary); line-height: 1.5; }
 }
 
 .hero-emoji { font-size: 56px; text-align: center; }
+.hero-image {
+  display: block;
+  width: 140px;
+  height: 140px;
+  margin: 0 auto;
+  border-radius: 32px;
+  box-shadow: 0 12px 32px rgba(139,92,246,0.35), 0 0 0 1px rgba(255,255,255,0.08);
+}
+.hero-image.sm { width: 88px; height: 88px; border-radius: 22px; }
 
 /* ---- Tarjetas de cristal ---- */
 .card {
