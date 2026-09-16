@@ -333,8 +333,14 @@ function screenOnboarding() {
 
   return `
     <div class="screen center">
-      <img src="icons/hero.png" alt="PuraGuasa" class="hero-image sm" />
-      <div style="font-size:44px">${slide.emoji}</div>
+      <div class="brand-row">
+        <img src="icons/hero.png" alt="PuraGuasa" class="hero-image sm" />
+        <div class="brand-text">
+          <div class="brand-name">PuraGuasa</div>
+          <div class="brand-tag">🔎 En busca del Intruso</div>
+        </div>
+      </div>
+      <div style="font-size:44px;margin-top:8px">${slide.emoji}</div>
       <h2>${esc(slide.title)}</h2>
       <p>${esc(slide.text)}</p>
     </div>
