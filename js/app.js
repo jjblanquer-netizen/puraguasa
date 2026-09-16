@@ -80,6 +80,7 @@ const state = {
     voteConfirming: false,
     resetConfirming: false,
     editingProfile: false,
+    leaveConfirming: false,
     onboardingIndex: 0,
     onboardingDontShow: false,
   },
@@ -285,6 +286,7 @@ function syncScreenFromPhase(phase) {
     state.ui.revealConfirmedLocally = false;
     state.ui.lastChanceMode = 'choice';
     state.ui.resetConfirming = false;
+    state.ui.leaveConfirming = false;
     if (next !== 'config') state.ui.configDraft = null;
   }
   state.lastPhase = next;
@@ -310,12 +312,25 @@ function finishOnboarding() {
   render();
 }
 
+// Sales de la sala: si eres el anfitrión, la cierras para todos; si no,
+// solo te quitas a ti. Usado tanto por el botón de salir con doble
+// verificación como por los botones directos del lobby/resultado final.
+async function doLeaveRoom() {
+  if (isHost()) {
+    await DB.deleteRoom(state.code);
+  } else {
+    await DB.leaveRoom(state.code, me.id);
+  }
+  leaveToLanding();
+}
+
 // ---------------------------- Dispatcher de pantallas ----------------------------
 const RESET_ELIGIBLE_SCREENS = ['reveal', 'clues', 'debate', 'voting', 'voteResult', 'lastChance'];
 const IN_ROOM_SCREENS = ['lobby', 'config', 'reveal', 'clues', 'debate', 'voting', 'voteResult', 'lastChance', 'finalResult'];
 
 function renderScreen() {
   if (state.ui.editingProfile) return screenEditProfile();
+  if (state.ui.leaveConfirming) return screenLeaveConfirm();
 
   let html;
   switch (state.screen) {
@@ -337,7 +352,15 @@ function renderScreen() {
     html += hostResetControl();
   }
   if (state.room?.players?.[me.id] && IN_ROOM_SCREENS.includes(state.screen)) {
-    html += `<div class="screen" style="padding-top:0;padding-bottom:4px"><div class="icon-link" onclick="App.openProfileEdit()">${icon('edit', 14)}<span>Editar mi jugador (${esc(me.name)})</span></div></div>`;
+    html += `<div class="screen" style="padding-top:0;padding-bottom:4px;gap:8px;display:flex;flex-direction:column;align-items:center">`;
+    html += `<div class="icon-link" onclick="App.openProfileEdit()">${icon('edit', 14)}<span>Editar mi jugador (${esc(me.name)})</span></div>`;
+    // El lobby y el resultado final ya tienen su propio botón de salir bien
+    // visible dentro del contenido principal; en el resto de pantallas de
+    // la partida (donde no hay ninguno) añadimos este acceso discreto.
+    if (!['lobby', 'finalResult'].includes(state.screen)) {
+      html += `<div class="icon-link" onclick="App.confirmLeave()">${icon('close', 14)}<span>Salir del juego</span></div>`;
+    }
+    html += `</div>`;
   }
   return html;
 }
@@ -370,6 +393,28 @@ function screenEditProfile() {
           <button class="btn secondary auto" onclick="App.cancelProfileEdit()">Cerrar</button>
           <button class="btn auto" onclick="App.saveProfileEdit()" ${state.ui.nameInput.trim() ? '' : 'disabled'}>Guardar nombre</button>
         </div>
+      </div>
+    </div>
+  `;
+}
+
+// ---------------------------- Salir del juego (con doble verificación) ----------------------------
+function screenLeaveConfirm() {
+  const host = isHost();
+  const warning = host
+    ? 'Eres el anfitrión: si sales, la sala se cierra para todos los jugadores y la partida termina aquí.'
+    : 'Saldrás de la sala. Si el anfitrión no la cierra, podrás volver a entrar más tarde con el mismo código.';
+
+  return `
+    <div class="screen center">
+      <div class="card center" style="border-color:var(--danger)">
+        <div style="color:var(--danger)">${icon('close', 32)}</div>
+        <h2>¿Salir del juego?</h2>
+        <p>${warning}</p>
+      </div>
+      <div class="btn-row">
+        <button class="btn secondary auto" onclick="App.cancelLeave()">Seguir jugando</button>
+        <button class="btn danger auto" onclick="App.doLeave()">Sí, salir</button>
       </div>
     </div>
   `;
@@ -559,12 +604,12 @@ function screenLobby() {
       ${host ? `
         ${lobbyWaitingBlock(players)}
         <button class="btn" onclick="App.goConfig()" ${players.length >= 3 ? '' : 'disabled'}>Configurar y empezar</button>
-        <button class="btn ghost" onclick="App.leaveRoom()">Cerrar sala y salir</button>
+        <button class="btn ghost" onclick="App.confirmLeave()">Cerrar sala y salir</button>
       ` : `
         ${players.length < 3
           ? lobbyWaitingBlock(players)
           : `<div class="card center">${icon('clock', 18)}<p>Esperando a que el anfitrión configure y empiece la partida…</p></div>`}
-        <button class="btn ghost" onclick="App.leaveRoom()">Salir de la sala</button>
+        <button class="btn ghost" onclick="App.confirmLeave()">Salir de la sala</button>
       `}
     </div>
   `;
@@ -1058,9 +1103,9 @@ function screenFinalResult() {
         <button class="btn" onclick="App.playAgain(false)">Revancha (puntos a cero)</button>
         <button class="btn secondary" onclick="App.playAgain(true)">Nueva ronda (conservar puntos)</button>
         <button class="btn secondary" onclick="App.goToConfigFromFinal()">Cambiar configuración</button>
-        <button class="btn ghost" onclick="App.leaveRoom()">Cerrar sala y salir</button>
+        <button class="btn ghost" onclick="App.confirmLeave()">Cerrar sala y salir</button>
       ` : `<p class="muted text-center">El anfitrión decide el siguiente paso.</p>
-        <button class="btn ghost" onclick="App.leaveRoom()">Salir de la sala</button>`}
+        <button class="btn ghost" onclick="App.confirmLeave()">Salir de la sala</button>`}
     </div>
   `;
 }
@@ -1289,14 +1334,7 @@ window.App = {
   },
   startGame: () => startGame(),
 
-  leaveRoom: async () => {
-    if (isHost()) {
-      await DB.deleteRoom(state.code);
-    } else {
-      await DB.leaveRoom(state.code, me.id);
-    }
-    leaveToLanding();
-  },
+  leaveRoom: async () => { await doLeaveRoom(); },
 
   // Revelación
   setPeek: (v) => { state.ui.revealPeeking = v; render(); },
@@ -1409,6 +1447,15 @@ window.App = {
     if (state.code && state.room?.players?.[me.id]) {
       await DB.updateAt(`rooms/${state.code}/players/${me.id}`, { name: me.name });
     }
+  },
+
+  // Salir del juego, con doble verificación (destruye la sala si eres el
+  // anfitrión, o simplemente te quita a ti si no lo eres).
+  confirmLeave: () => { state.ui.leaveConfirming = true; render(); },
+  cancelLeave: () => { state.ui.leaveConfirming = false; render(); },
+  doLeave: async () => {
+    state.ui.leaveConfirming = false;
+    await doLeaveRoom();
   },
 
   confirmReset: () => { state.ui.resetConfirming = true; render(); },
