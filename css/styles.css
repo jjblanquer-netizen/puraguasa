@@ -313,11 +313,37 @@ input:focus, select:focus { outline: none; border-color: var(--primary); box-sha
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid transparent;
+  border: 2.5px solid transparent;
   position: relative;
   flex-shrink: 0;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
 }
-.avatar-emoji { line-height: 1; }
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* ---- Selector de avatar (agrupado por temática) ---- */
+.avatar-pick {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: inline-flex;
+  cursor: pointer;
+  border: 2.5px solid transparent;
+  flex-shrink: 0;
+  transition: transform 0.1s ease, border-color 0.15s ease;
+}
+.avatar-pick img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.avatar-pick:active { transform: scale(0.94); }
+.avatar-pick.active {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(139,92,246,0.28);
+}
 
 /* ---- Filas de jugador ---- */
 .player-row {
