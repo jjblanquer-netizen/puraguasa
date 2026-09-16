@@ -7,9 +7,9 @@
 //  4) el ANFITRIÓN es quien ejecuta las transiciones de fase
 //     (evita que dos móviles escriban el mismo cambio a la vez).
 // ============================================================
-import * as DB from './db.js';
-import * as Engine from './gameEngine.js';
-import { CATEGORIES, AVATARS, AVATAR_COLORS, getAvatar, getColorHex, TERMS } from './gameData.js';
+import * as DB from './db.js?v=3';
+import * as Engine from './gameEngine.js?v=3';
+import { CATEGORIES, AVATARS, AVATAR_COLORS, getAvatar, getColorHex, TERMS } from './gameData.js?v=3';
 
 // ---------------------------- Identidad local ----------------------------
 const ME_KEY = 'intruso.me';

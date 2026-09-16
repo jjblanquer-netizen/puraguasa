@@ -24,8 +24,8 @@ import {
   serverTimestamp,
   runTransaction,
 } from 'https://www.gstatic.com/firebasejs/10.13.2/firebase-database.js';
-import { firebaseConfig } from './firebase-config.js';
-import { generateRoomCode } from './gameEngine.js';
+import { firebaseConfig } from './firebase-config.js?v=3';
+import { generateRoomCode } from './gameEngine.js?v=3';
 
 let app = null;
 let db = null;
